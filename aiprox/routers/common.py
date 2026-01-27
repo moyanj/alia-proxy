@@ -168,6 +168,47 @@ async def get_config():
     return config_data
 
 
+@router.post("/api/config")
+async def update_config(new_config: dict):
+    """
+    更新配置信息。
+    支持处理脱敏过的 API Key。
+    """
+    from ..config import save_config, Settings
+
+    current_config = settings.model_dump()
+
+    # 处理提供商配置
+    if "providers" in new_config:
+        for name, provider in new_config["providers"].items():
+            # 如果新配置中的 API Key 是脱敏形式，则保留原有 Key
+            if "api_key" in provider:
+                val = provider["api_key"]
+                if val == "****" or (val and "..." in val and len(val) >= 11):
+                    if (
+                        name in current_config["providers"]
+                        and "api_key" in current_config["providers"][name]
+                    ):
+                        provider["api_key"] = current_config["providers"][name][
+                            "api_key"
+                        ]
+
+    # 更新全局设置对象
+    try:
+        updated_settings = Settings(**new_config)
+        # 更新内存中的设置
+        settings.debug = updated_settings.debug
+        settings.database_url = updated_settings.database_url
+        settings.media_dir = updated_settings.media_dir
+        settings.providers = updated_settings.providers
+
+        # 保存到文件
+        save_config(settings)
+        return {"status": "success", "message": "Configuration updated"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid configuration: {str(e)}")
+
+
 @router.get("/api/models")
 async def list_all_models():
     """

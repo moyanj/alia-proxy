@@ -43,5 +43,14 @@ def load_config(config_path: str = "config.toml") -> Settings:
     return Settings()
 
 
+def save_config(new_settings: Settings, config_path: str = "config.toml"):
+    """
+    将设置保存到 TOML 配置文件。
+    """
+    data = new_settings.model_dump()
+    with open(config_path, "w") as f:
+        toml.dump(data, f)
+
+
 # 初始化全局设置实例
 settings = load_config()

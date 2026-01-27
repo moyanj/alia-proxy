@@ -4,6 +4,9 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from tortoise import Tortoise
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import os
 from .routers import openai, media, export, common, anthropic
 from .config import settings
 
@@ -24,6 +27,15 @@ app = FastAPI(
     description="支持多提供商的统一 AI API 代理服务",
     version="0.1.0",
     lifespan=lifespan,
+)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -88,6 +100,12 @@ app.include_router(anthropic.router)
 app.include_router(media.router)
 app.include_router(export.router)
 app.include_router(common.router)
+
+
+# 挂载前端静态文件 (如果存在)
+frontend_path = os.path.join(os.getcwd(), "frontend/dist")
+if os.path.exists(frontend_path):
+    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
 
 
 if __name__ == "__main__":
