@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from tortoise import Tortoise
-from .routers import openai, media, export, common
+from .routers import openai, media, export, common, anthropic
 from .config import settings
 
 
@@ -84,6 +84,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 app.include_router(openai.router)
+app.include_router(anthropic.router)
 app.include_router(media.router)
 app.include_router(export.router)
 app.include_router(common.router)

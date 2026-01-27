@@ -12,6 +12,8 @@ from .base import (
     ToolCallFunction,
     ChatCompletionChoice,
     ProviderConfig,
+    EmbeddingsRequest,
+    EmbeddingsResponse,
 )
 
 
@@ -25,6 +27,12 @@ class AnthropicProvider(BaseProvider):
         if not config.base_url:
             config.base_url = "https://api.anthropic.com/v1"
         super().__init__(config)
+
+    async def embeddings(self, request: EmbeddingsRequest) -> EmbeddingsResponse:
+        """
+        Anthropic 目前不支持嵌入生成。
+        """
+        raise NotImplementedError("Anthropic does not support embeddings")
 
     def _map_messages(self, messages: List[ChatMessage]) -> List[Dict[str, Any]]:
         """
@@ -190,6 +198,48 @@ class AnthropicProvider(BaseProvider):
                     + data["usage"]["output_tokens"],
                 ),
             )
+
+    async def chat_native(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        原生 Anthropic 消息接口。
+        """
+        async with httpx.AsyncClient() as client:
+            headers = {
+                "x-api-key": self.api_key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            }
+            response = await client.post(
+                f"{self.base_url}/messages",
+                headers=headers,
+                json=payload,
+                timeout=60.0,
+            )
+            response.raise_for_status()
+            return response.json()
+
+    async def stream_native(self, payload: Dict[str, Any]) -> AsyncGenerator[str, None]:
+        """
+        原生 Anthropic 消息流接口。
+        """
+        async with httpx.AsyncClient() as client:
+            headers = {
+                "x-api-key": self.api_key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            }
+            payload["stream"] = True
+            async with client.stream(
+                "POST",
+                f"{self.base_url}/messages",
+                headers=headers,
+                json=payload,
+                timeout=60.0,
+            ) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if line:
+                        yield line
 
     async def stream(
         self, request: ChatRequest

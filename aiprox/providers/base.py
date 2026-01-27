@@ -120,6 +120,29 @@ class ChatResponse(BaseModel):
     usage: Usage  # Token 使用情况
 
 
+class EmbeddingsRequest(BaseModel):
+    """
+    嵌入请求模型。
+    """
+
+    model: str
+    input: Union[str, List[str]]
+    user: Optional[str] = None
+    encoding_format: Optional[str] = None
+    dimensions: Optional[int] = None
+
+
+class EmbeddingsResponse(BaseModel):
+    """
+    嵌入响应模型。
+    """
+
+    object: str = "list"
+    data: List[Dict[str, Any]]
+    model: str
+    usage: Usage
+
+
 class BaseProvider(ABC):
     """
     所有 AI 提供商的抽象基类。
@@ -141,6 +164,13 @@ class BaseProvider(ABC):
     async def chat(self, request: ChatRequest) -> ChatResponse:
         """
         执行非流式聊天完成。
+        """
+        pass
+
+    @abstractmethod
+    async def embeddings(self, request: EmbeddingsRequest) -> EmbeddingsResponse:
+        """
+        执行嵌入生成。
         """
         pass
 

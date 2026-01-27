@@ -1,7 +1,12 @@
 import json
 import base64
 from typing import Any, Dict, Tuple, AsyncGenerator
-from ..providers.base import BaseProvider, ChatRequest
+from ..providers.base import (
+    BaseProvider,
+    ChatRequest,
+    EmbeddingsRequest,
+    EmbeddingsResponse,
+)
 from ..services.logger import log_request
 from ..services.media import save_media
 
@@ -29,15 +34,41 @@ class ProxyService:
         调用提供商 API，记录日志并返回响应结果。
         """
         response = await self.provider.chat(chat_request)
+
+        resp_content = response.choices[0].message.content
+        if isinstance(resp_content, list):
+            resp_content = json.dumps(resp_content, ensure_ascii=False)
+        elif resp_content is None:
+            resp_content = ""
+
         # 记录请求和响应到数据库
         await log_request(
             provider=self.instance_name,
             endpoint="chat",
             model=self.model,
             prompt=str(chat_request.messages),
-            response=response.choices[0].message.content or "",
+            response=resp_content,
             prompt_tokens=response.usage.prompt_tokens,
             completion_tokens=response.usage.completion_tokens,
+            total_tokens=response.usage.total_tokens,
+            status_code=200,
+        )
+        return response.model_dump(exclude_none=True)
+
+    async def embeddings(self, request: EmbeddingsRequest) -> Dict[str, Any]:
+        """
+        处理嵌入请求。
+        调用提供商 API，记录日志并返回响应结果。
+        """
+        response = await self.provider.embeddings(request)
+        # 记录请求和响应到数据库
+        await log_request(
+            provider=self.instance_name,
+            endpoint="embeddings",
+            model=self.model,
+            prompt=str(request.input),
+            response="[Embeddings Data]",
+            prompt_tokens=response.usage.prompt_tokens,
             total_tokens=response.usage.total_tokens,
             status_code=200,
         )
@@ -113,3 +144,90 @@ class ProxyService:
             status_code=200,
         )
         return content, filename
+
+    async def anthropic_chat(self, body: Dict[str, Any]) -> Any:
+        """
+        处理 Anthropic 原生消息请求。
+        """
+        # 确保模型字段正确
+        body["model"] = self.model
+
+        # 如果是流式请求
+        if body.get("stream"):
+            return self.anthropic_chat_stream(body)
+
+        # 否则是非流式
+        from ..providers.anthropic import AnthropicProvider
+
+        if isinstance(self.provider, AnthropicProvider):
+            # 直接调用底层方法 (假设我们稍后在 AnthropicProvider 中暴露这个逻辑)
+            # 或者我们在这里重新实现，但最好是让 Provider 处理
+            response = await self.provider.chat_native(body)
+
+            # 记录日志
+            content = ""
+            for block in response.get("content", []):
+                if block["type"] == "text":
+                    content += block["text"]
+
+            await log_request(
+                provider=self.instance_name,
+                endpoint="anthropic/messages",
+                model=self.model,
+                prompt=str(body.get("messages")),
+                response=content,
+                prompt_tokens=response.get("usage", {}).get("input_tokens", 0),
+                completion_tokens=response.get("usage", {}).get("output_tokens", 0),
+                total_tokens=response.get("usage", {}).get("input_tokens", 0)
+                + response.get("usage", {}).get("output_tokens", 0),
+                status_code=200,
+            )
+            return response
+        else:
+            raise ValueError(
+                "Selected provider does not support Anthropic native format"
+            )
+
+    async def anthropic_chat_stream(
+        self, body: Dict[str, Any]
+    ) -> AsyncGenerator[str, None]:
+        """
+        处理 Anthropic 原生流式消息请求。
+        """
+        from ..providers.anthropic import AnthropicProvider
+
+        if not isinstance(self.provider, AnthropicProvider):
+            raise ValueError(
+                "Selected provider does not support Anthropic native format"
+            )
+
+        full_content = ""
+        input_tokens = 0
+        output_tokens = 0
+
+        async for line in self.provider.stream_native(body):
+            # 解析内容用于记录日志
+            if line.startswith("data: "):
+                data = json.loads(line[6:])
+                if data["type"] == "content_block_delta":
+                    if data["delta"]["type"] == "text_delta":
+                        full_content += data["delta"]["text"]
+                elif data["type"] == "message_start":
+                    input_tokens = data["message"]["usage"]["input_tokens"]
+                elif data["type"] == "message_delta":
+                    output_tokens = data["usage"]["output_tokens"]
+
+            yield line + "\n"
+
+        # 记录日志
+        await log_request(
+            provider=self.instance_name,
+            endpoint="anthropic/messages",
+            model=self.model,
+            prompt=str(body.get("messages")),
+            response=full_content,
+            prompt_tokens=input_tokens,
+            completion_tokens=output_tokens,
+            total_tokens=input_tokens + output_tokens,
+            status_code=200,
+        )

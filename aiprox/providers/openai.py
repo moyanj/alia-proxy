@@ -1,7 +1,14 @@
 import httpx
 import json
 from typing import Any, Dict, Optional, AsyncGenerator, List
-from .base import BaseProvider, ChatRequest, ChatResponse, ProviderConfig
+from .base import (
+    BaseProvider,
+    ChatRequest,
+    ChatResponse,
+    ProviderConfig,
+    EmbeddingsRequest,
+    EmbeddingsResponse,
+)
 
 
 class OpenAIProvider(BaseProvider):
@@ -34,6 +41,26 @@ class OpenAIProvider(BaseProvider):
             response.raise_for_status()
             data = response.json()
             return ChatResponse(**data)
+
+    async def embeddings(self, request: EmbeddingsRequest) -> EmbeddingsResponse:
+        """
+        发送嵌入生成请求。
+        """
+        timeout = getattr(self.config, "timeout", 60.0)
+        async with httpx.AsyncClient() as client:
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            }
+            response = await client.post(
+                f"{self.base_url}/embeddings",
+                headers=headers,
+                json=request.model_dump(exclude_none=True),
+                timeout=timeout,
+            )
+            response.raise_for_status()
+            data = response.json()
+            return EmbeddingsResponse(**data)
 
     async def stream(
         self, request: ChatRequest

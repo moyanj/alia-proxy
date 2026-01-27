@@ -1,7 +1,7 @@
 import traceback
 from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import StreamingResponse
-from ..providers.base import ChatRequest
+from ..providers.base import ChatRequest, EmbeddingsRequest
 from .deps import get_proxy_service
 from ..services.proxy import ProxyService
 from ..config import settings
@@ -136,3 +136,21 @@ async def chat_completions(
         )
     else:
         return await proxy.chat(chat_request)
+
+
+@router.post("/v1/embeddings")
+async def embeddings(
+    request: Request, proxy: ProxyService = Depends(get_proxy_service)
+):
+    """
+    OpenAI 兼容的嵌入生成接口。
+    """
+    body = await request.json()
+    body["model"] = proxy.model  # 使用解析后的实际模型名
+
+    try:
+        emb_request = EmbeddingsRequest(**body)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return await proxy.embeddings(emb_request)
