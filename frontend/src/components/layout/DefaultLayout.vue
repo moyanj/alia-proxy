@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col md:flex-row">
     <!-- Sidebar / Nav -->
-    <nav class="w-full md:w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-shrink-0">
+    <nav class="w-full md:w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shrink-0">
       <div class="p-6 flex items-center gap-3">
         <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">A</div>
         <h1 class="text-xl font-bold text-gray-900 dark:text-white">AI Proxy</h1>
@@ -48,7 +48,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import GlobalUI from './GlobalUI.vue'
-import { 
+import {
 
   LayoutDashboard,
   ListTodo,
