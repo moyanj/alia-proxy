@@ -54,9 +54,7 @@ class ProviderFactory:
             raise ValueError(f"Provider instance '{name}' not found in config.")
 
         provider_type = config.type
-        api_key = config.api_key
-        if not api_key:
-            raise ValueError(f"API key not configured for provider '{name}'.")
+        api_key = config.api_key or ""
         base_url = config.base_url
 
         # 从注册表中查找对应的实现类

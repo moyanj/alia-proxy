@@ -1,21 +1,24 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-01-26
-**Project:** AI Proxy Service (aiprox)
+**Generated:** 2026-01-27T14:00:22Z
+**Commit:** 03b838d
+**Branch:** main
 
 ## OVERVIEW
-Unified AI API proxy built with FastAPI, supporting multiple providers (OpenAI, Anthropic, Ollama), and logging to SQLite.
+Unified AI API proxy built with FastAPI, supporting multiple providers (OpenAI, Anthropic, Ollama), with unified logging and media persistence.
 
 ## STRUCTURE
 ```
 .
-├── app/                  # Backend source code
+├── aiprox/               # Backend source code
 │   ├── providers/        # Provider strategy implementations
 │   ├── routers/          # API endpoints (OpenAI-compatible)
-│   ├── services/         # Logger and Media services
+│   ├── services/         # Logger, Proxy, and Media services
 │   ├── models.py         # Tortoise-ORM database models
-│   └── config.py         # Settings management (Pydantic)
+│   ├── config.py         # Settings management (Pydantic)
+│   └── main.py           # Application entry point
 ├── data/                 # Persistent storage (SQLite DB, Media)
+├── tests/                # Pytest suite
 ├── config.toml           # Main provider configuration
 └── pyproject.toml        # Dependency management (uv)
 ```
@@ -23,29 +26,44 @@ Unified AI API proxy built with FastAPI, supporting multiple providers (OpenAI, 
 ## WHERE TO LOOK
 | Task | Location | Notes |
 |------|----------|-------|
-| Add new AI Provider | `app/providers/` | Implement `BaseProvider` |
-| Add new API Endpoint | `app/routers/` | FastAPI routers |
-| Database changes | `app/models.py` | Tortoise Models |
-| Configuration changes | `app/config.py` | Pydantic Settings |
+| Add new AI Provider | `aiprox/providers/` | Implement `BaseProvider` & register in `factory.py` |
+| Add new API Endpoint | `aiprox/routers/` | FastAPI routers (OpenAI compatible) |
+| Database changes | `aiprox/models.py` | Tortoise-ORM Models |
+| Configuration changes | `aiprox/config.py` | Pydantic Settings & `config.toml` |
+| Business Logic | `aiprox/services/` | `proxy.py` orchestrates execution |
+
+## CODE MAP
+| Symbol | Type | Location | Role |
+|--------|------|----------|------|
+| `ProxyService` | Class | `aiprox/services/proxy.py` | High-level orchestrator for AI requests |
+| `BaseProvider` | Class | `aiprox/providers/base.py` | Abstract interface for all providers |
+| `ProviderFactory` | Class | `aiprox/providers/factory.py` | Registry and instantiator for providers |
+| `RequestLog` | Class | `aiprox/models.py` | Central database table for logs |
+| `Settings` | Class | `aiprox/config.py` | Global configuration container |
 
 ## CONVENTIONS
-- **FastAPI**: Use `async` for all route handlers.
-- **Dependency**: Managed via `uv`. Use `uv add` for new packages.
-- **Settings**: All configurations should be defined in `app/config.py` and loaded from `config.toml`.
-- **Database**: Use Tortoise-ORM for models and SQLite (aiosqlite) for storage.
+- **Async-Only**: Use `async` for all route handlers and I/O. Use `httpx.AsyncClient`.
+- **Dependency**: Managed via `uv`. Use `uv run` or `uv add`.
+- **Testing**: Use `pytest` with in-memory SQLite isolation (`autouse` fixture).
+- **Naming**: `aiprox/` is the core package (often referred to as `app` in generic docs).
 
 ## ANTI-PATTERNS (THIS PROJECT)
 - **Hardcoded Keys**: NEVER put API keys in code. Use `config.toml`.
-- **Sync DB calls**: DO NOT use synchronous ORMs or blocking drivers.
+- **Sync DB calls**: DO NOT use synchronous ORMs or blocking drivers (e.g. `requests`).
+- **Direct Provider Import**: Routers must use `ProxyService` or `ProviderFactory`.
 
 ## COMMANDS
 ```bash
 # Run locally
-uv run python -m app.main
+uv run python -m aiprox.main
 
-# Run with Docker
+# Run tests
+uv run pytest
+
+# Docker
 docker-compose up --build
 ```
 
 ## NOTES
-- Media files are saved to `data/media/` and served via authenticated routes.
+- Media files (images/audio) are saved to `data/media/` and served via `/media/...`.
+- Requests use `provider/model` format (e.g., `openai/gpt-4o`) in the `model` field.

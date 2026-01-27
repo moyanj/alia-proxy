@@ -1,3 +1,4 @@
+import traceback
 from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import StreamingResponse
 from ..providers.base import ChatRequest
@@ -43,6 +44,7 @@ async def list_models():
             provider = ProviderFactory.get_provider(name)
             tasks.append((name, provider.list_models()))
         except Exception:
+            print(traceback.format_exc())
             # 某个提供商配置错误或宕机，跳过
             continue
 
@@ -51,6 +53,7 @@ async def list_models():
         results = await asyncio.gather(*(t[1] for t in tasks), return_exceptions=True)
         for i, result in enumerate(results):
             name = tasks[i][0]
+            print(f"{name}: {result}")
 
             if isinstance(result, list):
                 # 更新缓存
@@ -73,6 +76,15 @@ async def list_models():
                                 all_models.append(m_copy)
 
     return {"object": "list", "data": all_models}
+
+
+@router.get("/v1/models/cache/clear")
+async def clear_models_cache():
+    """
+    清除模型列表缓存。
+    """
+    MODELS_CACHE.clear()
+    return {"detail": "Models cache cleared"}
 
 
 @router.post("/v1/images/generations")

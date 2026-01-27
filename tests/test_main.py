@@ -1,6 +1,6 @@
 import pytest
 from httpx import AsyncClient, ASGITransport
-from app.main import app
+from aiprox.main import app
 from tortoise import Tortoise
 from unittest.mock import AsyncMock, patch
 
@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, patch
 async def db():
     await Tortoise.init(
         db_url="sqlite://:memory:",
-        modules={"models": ["app.models"]},
+        modules={"models": ["aiprox.models"]},
     )
     await Tortoise.generate_schemas()
     yield

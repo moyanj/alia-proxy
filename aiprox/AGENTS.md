@@ -1,38 +1,22 @@
-# APP INTERNALS KNOWLEDGE BASE
+# AI PROXY CORE
 
 ## OVERVIEW
-FastAPI backend implementing a provider-agnostic AI proxy. Handles dynamic routing, multimedia persistence, and unified logging.
+FastAPI-based unified AI proxy handler. Manages multi-provider routing, unified logging to SQLite, and media persistence.
 
 ## CORE MODULES
-- **main.py**: Application entry point.
-  - Initializes SQLite DB via `lifespan` context manager.
-  - Mounts routers: `openai`, `media`, `export`, `common`.
-- **config.py**: Settings management.
-  - Loads `config.toml` into Pydantic `Settings`.
-  - Supports environment overrides via `AIPROX_` prefix.
-- **models.py**: Data layer.
-  - Uses `SQLModel` for ORM.
-  - `RequestLog`: Primary table for tracking all proxy activity.
-
-## ROUTING & LOGIC
-- **routers/openai.py**: API endpoints.
-  - Uses `get_proxy_service` dependency to resolve providers.
-- **routers/deps.py**: FastAPI dependencies.
-  - Handles parsing `provider/model` and instantiating `ProxyService`.
-- **services/proxy.py**: The "Brain" of the proxy.
-  - Orchestrates calls between `providers` and `services` (logger, media).
-  - Handles streaming responses and media persistence.
-- **providers/**: Strategy pattern for AI backends.
+- **main.py**: Entry point. Manages lifespan (ORM init) and mounts routers.
+- **config.py**: Pydantic `Settings`. Loads `config.toml` and env `AIPROX_*`.
+- **models.py**: Tortoise-ORM schema. `RequestLog` stores prompts, usage, and media refs.
+- **services/proxy.py**: Orchestrator. Resolves providers via factory and manages logging/media logic.
+- **routers/deps.py**: FastAPI dependencies. `get_proxy_service` parses `provider/model`.
 
 ## DATA FLOW
-1. **Request** arrives at `routers/openai.py`.
-2. **Dependency** `get_proxy_service` resolves provider via `ProviderFactory` and returns `ProxyService`.
-3. **Router** calls `ProxyService` methods.
-4. **ProxyService** calls **Provider** to execute API call to upstream.
-5. **ProxyService** processes response, calls `services.media` and `services.logger`.
-6. **Response** returned to client.
-
+1. **Request**: Client sends OpenAI-compatible JSON to `/v1/...`.
+2. **Dependency**: `get_proxy_service` resolves provider ID from `model` field.
+3. **Execution**: `ProxyService` calls provider, logs results, and saves media via `MediaService`.
+4. **Response**: Streamed or buffered response returned to client.
 
 ## CONVENTIONS
-- **Async First**: All I/O bound operations (API calls, DB, File) must be `async`.
-- **Provider Agnostic**: Routers should interact with `BaseProvider` interface, not concrete classes.
+- **Provider Abstraction**: Routers never import concrete providers.
+- **Schema Validation**: All internal data uses Pydantic `BaseModel`.
+- **Telegraphic Style**: Keep documentation focused on "where" and "how".

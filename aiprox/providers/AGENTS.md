@@ -1,29 +1,24 @@
 # PROVIDER STRATEGY
 
 ## OVERVIEW
-Implements the Strategy Pattern to unify diverse AI provider APIs (OpenAI, Anthropic, etc.) into a single internal interface.
+Unified Strategy Pattern implementation for mapping diverse AI backend APIs to a consistent internal interface.
 
-## CORE COMPONENTS
-- **BaseProvider (`base.py`)**: Abstract base class defining the unified interface.
-- **ProviderFactory (`factory.py`)**: Handles instantiation and caching of provider instances using a Registry pattern.
-- **Implementations**:
-  - `OpenAIProvider`: Handles OpenAI and compatible APIs.
-  - `AnthropicProvider`: Maps Anthropic's Messages API.
-
-## HOW TO ADD A NEW PROVIDER
-1. **Implement Strategy**:
-   - Create `app/providers/your_provider.py` inheriting from `BaseProvider`.
-2. **Register in Factory**:
-   - Add it to the `_registry` in `factory.py` or use `ProviderFactory.register`.
-3. **Configure**:
-   - Add to `config.toml` with `type = "your_type"`.
+## WHERE TO LOOK
+- `base.py`: The foundation of the provider system. It defines the `BaseProvider` abstract base class and the unified Pydantic models (`ChatRequest`, `ChatResponse`, `Usage`) used across the entire application.
+- `factory.py`: The central hub for provider management. It handles the mapping between provider types (e.g., "openai") and their implementations, manages instance caching, and resolves `provider/model` strings.
+- `openai.py`: The most versatile implementation. It handles standard OpenAI API calls and is also used for compatible backends like Ollama, DeepSeek, and other local or third-party LLM providers.
+- `anthropic.py`: A specialized implementation for Anthropic's Messages API. It handles the translation of unified messages into Anthropic's specific format and vice versa.
 
 ## CONVENTIONS
-- **Async First**: Use `httpx.AsyncClient` for all network operations.
-- **Unified Models**: Always return `ChatResponse` or `Usage` objects from `base.py`.
-- **Error Handling**: Raise `httpx.HTTPStatusError` for API failures to be caught by routers.
+- **Strict Interface Adherence**: Every provider must implement the full suite of methods defined in `BaseProvider`, including `chat`, `stream`, `image_gen`, and `text_to_speech`, even if only to raise `NotImplementedError`.
+- **Asynchronous First**: All network I/O must be performed using `httpx.AsyncClient`. Synchronous calls are strictly forbidden as they block the FastAPI event loop and degrade performance.
+- **Unified Response Mapping**: Providers are responsible for translating upstream API responses into the standard `ChatResponse` and `Usage` models defined in `base.py`.
+- **Streaming Format Consistency**: When implementing `stream`, providers must yield dictionaries that conform to the OpenAI-compatible streaming chunk format to ensure frontend compatibility.
+- **Registry-Based Extension**: To add a new provider type, implement the class and register it in `ProviderFactory._registry`. This allows the `ProxyService` to resolve it dynamically.
 
 ## ANTI-PATTERNS
-- **Hardcoded Keys**: Never store API keys in provider files; use `self.api_key`.
-- **Sync Calls**: Avoid `requests` or other blocking libraries.
-- **Direct Router Logic**: Keep provider-specific mapping logic inside the provider class.
+- **Configuration Hardcoding**: Avoid embedding provider-specific defaults (like base URLs or model names) in the code; these should be driven by the `config.toml` parameters passed during initialization.
+- **Synchronous Library Dependencies**: Avoid using libraries like `requests` or the synchronous versions of provider SDKs. Always prefer `httpx` or async-native SDKs to prevent event loop starvation.
+- **Leaky Provider Logic**: Provider-specific quirks, such as unique error codes or payload structures, must be encapsulated within the provider class and never exposed to the routers.
+- **Manual Instance Management**: Do not attempt to manage provider lifecycles or caching manually; the `ProviderFactory` is the sole authority for creating and retrieving provider instances.
+- **Inconsistent Token Counting**: Ensure that token usage is correctly extracted and mapped to the `Usage` model, as this data is critical for the application's logging and analytics features.
