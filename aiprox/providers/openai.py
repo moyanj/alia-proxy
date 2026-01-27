@@ -1,0 +1,116 @@
+import httpx
+import json
+from typing import Any, Dict, Optional, AsyncGenerator, List
+from .base import BaseProvider, ChatRequest, ChatResponse
+
+
+class OpenAIProvider(BaseProvider):
+    """
+    OpenAI 接口实现类。
+    适用于 OpenAI 官方 API 以及任何兼容 OpenAI 格式的第三方代理。
+    """
+
+    def __init__(self, api_key: str, base_url: Optional[str] = None):
+        super().__init__(api_key, base_url or "https://api.openai.com/v1")
+
+    async def chat(self, request: ChatRequest) -> ChatResponse:
+        """
+        发送非流式聊天请求。
+        """
+        async with httpx.AsyncClient() as client:
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            }
+            response = await client.post(
+                f"{self.base_url}/chat/completions",
+                headers=headers,
+                json=request.model_dump(exclude_none=True),
+                timeout=60.0,
+            )
+            response.raise_for_status()
+            data = response.json()
+            return ChatResponse(**data)
+
+    async def stream(
+        self, request: ChatRequest
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """
+        发送流式聊天请求。
+        """
+        async with httpx.AsyncClient() as client:
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            }
+            payload = request.model_dump(exclude_none=True)
+            payload["stream"] = True
+
+            async with client.stream(
+                "POST",
+                f"{self.base_url}/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=60.0,
+            ) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if line.startswith("data: "):
+                        data_str = line[6:]
+                        if data_str == "[DONE]":
+                            break
+                        yield json.loads(data_str)
+
+    async def image_gen(self, prompt: str, model: str) -> Dict[str, Any]:
+        """
+        发送图像生成请求。
+        要求返回 b64_json 格式以便后端保存。
+        """
+        async with httpx.AsyncClient() as client:
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            }
+            response = await client.post(
+                f"{self.base_url}/images/generations",
+                headers=headers,
+                json={"prompt": prompt, "model": model, "response_format": "b64_json"},
+                timeout=60.0,
+            )
+            response.raise_for_status()
+            return response.json()
+
+    async def text_to_speech(self, text: str, model: str, voice: str) -> bytes:
+        """
+        发送文本转语音请求。
+        """
+        async with httpx.AsyncClient() as client:
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            }
+            response = await client.post(
+                f"{self.base_url}/audio/speech",
+                headers=headers,
+                json={"input": text, "model": model, "voice": voice},
+                timeout=60.0,
+            )
+            response.raise_for_status()
+            return response.content
+
+    async def list_models(self) -> List[Dict[str, Any]]:
+        """
+        获取 OpenAI 兼容接口的模型列表。
+        """
+        async with httpx.AsyncClient() as client:
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+            }
+            response = await client.get(
+                f"{self.base_url}/models",
+                headers=headers,
+                timeout=10.0,
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data.get("data", [])

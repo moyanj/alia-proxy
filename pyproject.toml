@@ -1,0 +1,30 @@
+[project]
+name = "aiprox"
+version = "0.1.0"
+description = "Unified AI API proxy supporting multiple providers, logging, WebUI stats, fallback, and load balancing."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "httpx",
+    "aiofiles",
+    "sqlmodel",
+    "jinja2",
+    "toml",
+    "python-multipart",
+    "pydantic-settings",
+    "pydantic",
+    "tortoise-orm>=0.25.3",
+    "aiosqlite>=0.22.1",
+]
+
+[tool.setuptools]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[dependency-groups]
+dev = ["pytest", "pytest-asyncio", "httpx"]

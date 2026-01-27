@@ -1,0 +1,16 @@
+# AI Proxy Service Configuration Template
+
+app_name = "AI Proxy Service"
+debug = false
+database_url = "sqlite://data/aiprox.db"
+media_dir = "data/media"
+
+[providers.gpt4-example]
+type = "openai"
+api_key = "your-api-key-here"
+base_url = "https://api.openai.com/v1"
+
+[providers.claude-example]
+type = "anthropic"
+api_key = "your-anthropic-key-here"
+# base_url = "https://api.anthropic.com/v1"

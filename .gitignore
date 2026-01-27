@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.venv/
+.python-version
+
+# Database and Media
+data/
+
+# Node/Frontend
+node_modules/
+dist/
+.env
+
+# Tooling
+.sisyphus
+.DS_Store
+
+# Configuration
+config.toml
+
+.pytest_cache/
+
+.ruff_cache/
