@@ -1,6 +1,6 @@
 import os
 from typing import Dict, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import toml
 
@@ -13,6 +13,8 @@ class ProviderConfig(BaseModel):
     type: str  # 提供商类型 (如: openai, anthropic, ollama)
     api_key: Optional[str] = None  # API 密钥
     base_url: Optional[str] = None  # 基础 URL (用于自建或代理服务)
+
+    model_config = ConfigDict(extra="allow")
 
 
 class Settings(BaseSettings):

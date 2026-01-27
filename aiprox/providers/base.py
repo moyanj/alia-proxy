@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, AsyncGenerator, Union
+from typing import Any, Dict, List, Optional, AsyncGenerator, Union, Type
 from pydantic import BaseModel
+from ..config import ProviderConfig
 
 
 class Function(BaseModel):
@@ -125,14 +126,16 @@ class BaseProvider(ABC):
     定义了统一的接口，具体提供商 (如 OpenAI, Anthropic) 需继承并实现 these 方法。
     """
 
-    def __init__(self, api_key: str, base_url: Optional[str] = None):
+    Config: Type[ProviderConfig] = ProviderConfig
+
+    def __init__(self, config: ProviderConfig):
         """
         初始化提供商。
-        :param api_key: 访问 API 的密钥
-        :param base_url: 可选的 API 基础 URL
+        :param config: 提供商配置对象
         """
-        self.api_key = api_key
-        self.base_url = base_url
+        self.config = config
+        self.api_key = config.api_key
+        self.base_url = config.base_url
 
     @abstractmethod
     async def chat(self, request: ChatRequest) -> ChatResponse:

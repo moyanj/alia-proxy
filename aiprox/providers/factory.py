@@ -1,6 +1,7 @@
 from typing import Dict, Optional, Tuple, Type
 from .openai import OpenAIProvider
 from .anthropic import AnthropicProvider
+from .ollama import OllamaProvider
 from ..config import settings
 from .base import BaseProvider
 
@@ -15,6 +16,7 @@ class ProviderFactory:
     _registry: Dict[str, Type[BaseProvider]] = {  # 类型到实现类的映射注册表
         "openai": OpenAIProvider,
         "anthropic": AnthropicProvider,
+        "ollama": OllamaProvider,
     }
 
     @classmethod
@@ -54,15 +56,16 @@ class ProviderFactory:
             raise ValueError(f"Provider instance '{name}' not found in config.")
 
         provider_type = config.type
-        api_key = config.api_key or ""
-        base_url = config.base_url
 
         # 从注册表中查找对应的实现类
         provider_cls = cls._registry.get(provider_type)
         if not provider_cls:
             raise ValueError(f"Unsupported provider type: {provider_type}")
 
+        # 使用提供商自定义的 Config 模型进行验证
+        validated_config = provider_cls.Config(**config.model_dump())
+
         # 实例化并缓存
-        provider = provider_cls(api_key=api_key, base_url=base_url)
+        provider = provider_cls(config=validated_config)
         cls._instances[name] = provider
         return provider

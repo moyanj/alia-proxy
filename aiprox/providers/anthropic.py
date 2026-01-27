@@ -11,6 +11,7 @@ from .base import (
     ToolCall,
     ToolCallFunction,
     ChatCompletionChoice,
+    ProviderConfig,
 )
 
 
@@ -20,8 +21,10 @@ class AnthropicProvider(BaseProvider):
     负责处理与 Anthropic API 的通信，并将响应映射为 OpenAI 兼容格式。
     """
 
-    def __init__(self, api_key: str, base_url: Optional[str] = None):
-        super().__init__(api_key, base_url or "https://api.anthropic.com/v1")
+    def __init__(self, config: ProviderConfig):
+        if not config.base_url:
+            config.base_url = "https://api.anthropic.com/v1"
+        super().__init__(config)
 
     def _map_messages(self, messages: List[ChatMessage]) -> List[Dict[str, Any]]:
         """
