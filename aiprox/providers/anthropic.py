@@ -2,7 +2,16 @@ import httpx
 import json
 import time
 from typing import Any, Dict, Optional, AsyncGenerator, List
-from .base import BaseProvider, ChatRequest, ChatResponse, Usage, ChatMessage
+from .base import (
+    BaseProvider,
+    ChatRequest,
+    ChatResponse,
+    Usage,
+    ChatMessage,
+    ToolCall,
+    ToolCallFunction,
+    ChatCompletionChoice,
+)
 
 
 class AnthropicProvider(BaseProvider):
@@ -17,13 +26,74 @@ class AnthropicProvider(BaseProvider):
     def _map_messages(self, messages: List[ChatMessage]) -> List[Dict[str, Any]]:
         """
         内部工具方法：将内部消息模型转换为 Anthropic API 要求的格式。
+        支持多模态和工具调用转换。
         """
-        return [{"role": m.role, "content": m.content} for m in messages]
+        mapped = []
+        for m in messages:
+            content = m.content
+            # 处理多模态内容转换 (OpenAI 格式 -> Anthropic 格式)
+            if isinstance(content, list):
+                new_content = []
+                for item in content:
+                    if item.get("type") == "text":
+                        new_content.append({"type": "text", "text": item["text"]})
+                    elif item.get("type") == "image_url":
+                        # OpenAI: {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,..."}}
+                        # Anthropic: {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": "..."}}
+                        url = item["image_url"]["url"]
+                        if url.startswith("data:"):
+                            header, data = url.split(",", 1)
+                            media_type = header.split(";")[0].split(":")[1]
+                            new_content.append(
+                                {
+                                    "type": "image",
+                                    "source": {
+                                        "type": "base64",
+                                        "media_type": media_type,
+                                        "data": data,
+                                    },
+                                }
+                            )
+                content = new_content
+
+            if m.role == "assistant" and m.tool_calls:
+                # 转换工具调用为 Anthropic 的 tool_use 块
+                if not isinstance(content, list):
+                    content = [{"type": "text", "text": content or ""}]
+                for tc in m.tool_calls:
+                    content.append(
+                        {
+                            "type": "tool_use",
+                            "id": tc.id,
+                            "name": tc.function.name,
+                            "input": json.loads(tc.function.arguments),
+                        }
+                    )
+
+            if m.role == "tool":
+                # Anthropic 要求工具结果作为 'user' 角色的 content block
+                # 且必须紧跟在 tool_use 之后
+                mapped.append(
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": m.tool_call_id,
+                                "content": m.content,
+                            }
+                        ],
+                    }
+                )
+                continue
+
+            mapped.append({"role": m.role, "content": content})
+        return mapped
 
     async def chat(self, request: ChatRequest) -> ChatResponse:
         """
         发送非流式聊天请求到 Anthropic。
-        包含对系统消息的特殊处理（Anthropic 要求系统消息作为顶层参数）。
+        包含对系统消息、工具调用、停止序列等的处理。
         """
         async with httpx.AsyncClient() as client:
             headers = {
@@ -36,20 +106,35 @@ class AnthropicProvider(BaseProvider):
             system_message = next(
                 (m.content for m in request.messages if m.role == "system"), None
             )
-            # 过滤掉系统消息，保留普通对话消息
+            # 过滤掉系统消息
             messages = [m for m in request.messages if m.role != "system"]
 
             payload = {
                 "model": request.model,
                 "messages": self._map_messages(messages),
-                "max_tokens": request.max_tokens,
+                "max_tokens": request.max_tokens or 4096,
                 "temperature": request.temperature,
+                "top_p": request.top_p,
             }
-            # Anthropic 强制要求指定 max_tokens
-            if not payload["max_tokens"]:
-                raise ValueError("Anthropic requires 'max_tokens' to be specified.")
+
+            if request.stop:
+                payload["stop_sequences"] = (
+                    [request.stop] if isinstance(request.stop, str) else request.stop
+                )
+
             if system_message:
                 payload["system"] = system_message
+
+            if request.tools:
+                payload["tools"] = [
+                    {
+                        "name": t.function.name,
+                        "description": t.function.description or "",
+                        "input_schema": t.function.parameters
+                        or {"type": "object", "properties": {}},
+                    }
+                    for t in request.tools
+                ]
 
             response = await client.post(
                 f"{self.base_url}/messages",
@@ -60,22 +145,40 @@ class AnthropicProvider(BaseProvider):
             response.raise_for_status()
             data = response.json()
 
-            # 将 Anthropic 响应映射为 OpenAI 兼容的 ChatResponse
+            # 解析 Anthropic 内容块 (text + tool_use)
+            content_text = ""
+            tool_calls_list = []
+            for block in data.get("content", []):
+                if block["type"] == "text":
+                    content_text += block["text"]
+                elif block["type"] == "tool_use":
+                    tool_calls_list.append(
+                        ToolCall(
+                            id=block["id"],
+                            type="function",
+                            function=ToolCallFunction(
+                                name=block["name"],
+                                arguments=json.dumps(block["input"]),
+                            ),
+                        )
+                    )
+
             return ChatResponse(
                 id=data["id"],
                 created=int(time.time()),
                 model=data["model"],
                 choices=[
-                    {
-                        "index": 0,
-                        "message": {
-                            "role": "assistant",
-                            "content": (
-                                data["content"][0]["text"] if data["content"] else ""
-                            ),
-                        },
-                        "finish_reason": data.get("stop_reason"),
-                    }
+                    ChatCompletionChoice(
+                        index=0,
+                        message=ChatMessage(
+                            role="assistant",
+                            content=content_text or None,
+                            tool_calls=tool_calls_list if tool_calls_list else None,
+                        ),
+                        finish_reason=(
+                            "tool_calls" if tool_calls_list else data.get("stop_reason")
+                        ),
+                    )
                 ],
                 usage=Usage(
                     prompt_tokens=data["usage"]["input_tokens"],
@@ -107,14 +210,30 @@ class AnthropicProvider(BaseProvider):
             payload = {
                 "model": request.model,
                 "messages": self._map_messages(messages),
-                "max_tokens": request.max_tokens,
+                "max_tokens": request.max_tokens or 4096,
                 "temperature": request.temperature,
+                "top_p": request.top_p,
                 "stream": True,
             }
-            if not payload["max_tokens"]:
-                raise ValueError("Anthropic requires 'max_tokens' to be specified.")
+
+            if request.stop:
+                payload["stop_sequences"] = (
+                    [request.stop] if isinstance(request.stop, str) else request.stop
+                )
+
             if system_message:
                 payload["system"] = system_message
+
+            if request.tools:
+                payload["tools"] = [
+                    {
+                        "name": t.function.name,
+                        "description": t.function.description or "",
+                        "input_schema": t.function.parameters
+                        or {"type": "object", "properties": {}},
+                    }
+                    for t in request.tools
+                ]
 
             async with client.stream(
                 "POST",
@@ -124,25 +243,138 @@ class AnthropicProvider(BaseProvider):
                 timeout=60.0,
             ) as response:
                 response.raise_for_status()
+                message_id = ""
+                model_name = ""
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):
                         data_str = line[6:]
                         event_data = json.loads(data_str)
-
-                        # 映射 Anthropic 流事件到 OpenAI 兼容格式
                         event_type = event_data.get("type")
-                        if event_type == "content_block_delta":
+
+                        if event_type == "message_start":
+                            message_id = event_data["message"]["id"]
+                            model_name = event_data["message"]["model"]
                             yield {
+                                "id": message_id,
+                                "object": "chat.completion.chunk",
+                                "created": int(time.time()),
+                                "model": model_name,
                                 "choices": [
                                     {
-                                        "delta": {
-                                            "content": event_data["delta"]["text"]
-                                        },
                                         "index": 0,
+                                        "delta": {"role": "assistant", "content": ""},
                                         "finish_reason": None,
                                     }
-                                ]
+                                ],
                             }
+
+                        elif event_type == "content_block_delta":
+                            delta = event_data["delta"]
+                            if delta["type"] == "text_delta":
+                                yield {
+                                    "id": message_id,
+                                    "object": "chat.completion.chunk",
+                                    "created": int(time.time()),
+                                    "model": model_name,
+                                    "choices": [
+                                        {
+                                            "index": 0,
+                                            "delta": {"content": delta["text"]},
+                                            "finish_reason": None,
+                                        }
+                                    ],
+                                }
+                            elif delta["type"] == "input_json_delta":
+                                # 处理工具调用参数流
+                                yield {
+                                    "id": message_id,
+                                    "object": "chat.completion.chunk",
+                                    "created": int(time.time()),
+                                    "model": model_name,
+                                    "choices": [
+                                        {
+                                            "index": 0,
+                                            "delta": {
+                                                "tool_calls": [
+                                                    {
+                                                        "index": 0,
+                                                        "function": {
+                                                            "arguments": delta[
+                                                                "partial_json"
+                                                            ]
+                                                        },
+                                                    }
+                                                ]
+                                            },
+                                            "finish_reason": None,
+                                        }
+                                    ],
+                                }
+
+                        elif event_type == "content_block_start":
+                            if event_data["content_block"]["type"] == "tool_use":
+                                block = event_data["content_block"]
+                                yield {
+                                    "id": message_id,
+                                    "object": "chat.completion.chunk",
+                                    "created": int(time.time()),
+                                    "model": model_name,
+                                    "choices": [
+                                        {
+                                            "index": 0,
+                                            "delta": {
+                                                "tool_calls": [
+                                                    {
+                                                        "index": 0,
+                                                        "id": block["id"],
+                                                        "type": "function",
+                                                        "function": {
+                                                            "name": block["name"],
+                                                            "arguments": "",
+                                                        },
+                                                    }
+                                                ]
+                                            },
+                                            "finish_reason": None,
+                                        }
+                                    ],
+                                }
+
+                        elif event_type == "message_delta":
+                            stop_reason = event_data["delta"].get("stop_reason")
+                            finish_reason = stop_reason
+                            if stop_reason == "end_turn":
+                                finish_reason = "stop"
+                            elif stop_reason == "tool_use":
+                                finish_reason = "tool_calls"
+
+                            yield {
+                                "id": message_id,
+                                "object": "chat.completion.chunk",
+                                "created": int(time.time()),
+                                "model": model_name,
+                                "choices": [
+                                    {
+                                        "index": 0,
+                                        "delta": {},
+                                        "finish_reason": finish_reason,
+                                    }
+                                ],
+                                "usage": (
+                                    {
+                                        "prompt_tokens": 0,  # Anthropic 流不实时返回总用量，除非收尾
+                                        "completion_tokens": event_data["usage"][
+                                            "output_tokens"
+                                        ],
+                                        "total_tokens": event_data["usage"][
+                                            "output_tokens"
+                                        ],
+                                    }
+                                    if "usage" in event_data
+                                    else None
+                                ),
+                            }
+
                         elif event_type == "message_stop":
                             break
 

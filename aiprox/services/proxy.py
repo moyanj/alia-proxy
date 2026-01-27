@@ -35,7 +35,7 @@ class ProxyService:
             endpoint="chat",
             model=self.model,
             prompt=str(chat_request.messages),
-            response=response.choices[0]["message"]["content"],
+            response=response.choices[0].message.content or "",
             prompt_tokens=response.usage.prompt_tokens,
             completion_tokens=response.usage.completion_tokens,
             total_tokens=response.usage.total_tokens,

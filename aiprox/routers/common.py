@@ -6,6 +6,14 @@ from tortoise.functions import Count
 router = APIRouter()
 
 
+@router.get("/")
+async def read_root():
+    """
+    根路径，用于健康检查。
+    """
+    return {"app": "AI Proxy Service"}
+
+
 @router.get("/api/logs")
 async def get_logs(limit: int = 100):
     """
