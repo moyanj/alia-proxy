@@ -50,6 +50,7 @@
               <th class="px-6 py-4 font-semibold">提供商 / 模型</th>
               <th class="px-6 py-4 font-semibold">端点</th>
               <th class="px-6 py-4 font-semibold">Token 消耗</th>
+              <th class="px-6 py-4 font-semibold">延时 / 模式</th>
               <th class="px-6 py-4 font-semibold">状态</th>
               <th class="px-6 py-4 font-semibold text-right">操作</th>
             </tr>
@@ -73,6 +74,12 @@
                 <div class="flex flex-col text-xs">
                   <span>{{ log.total_tokens }} Total</span>
                   <span class="text-[10px] opacity-70">{{ log.prompt_tokens }}P / {{ log.completion_tokens }}C</span>
+                </div>
+              </td>
+              <td class="px-6 py-4 text-gray-600 dark:text-gray-400">
+                <div class="flex flex-col text-xs">
+                  <span>{{ log.latency.toFixed(2) }}s</span>
+                  <span class="text-[10px] opacity-70">{{ log.is_streaming ? 'Streaming' : 'Non-stream' }}</span>
                 </div>
               </td>
               <td class="px-6 py-4">
@@ -137,27 +144,27 @@
               <h4 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <MessageSquare class="w-4 h-4 text-blue-500" /> Prompt
               </h4>
-              <pre class="p-4 bg-gray-900 text-gray-300 rounded-xl text-xs overflow-auto max-h-60 whitespace-pre-wrap font-mono">{{ selectedLog.prompt }}</pre>
+              <pre class="p-4 bg-gray-900 text-gray-300 rounded-xl text-xs overflow-auto max-h-60 whitespace-pre-wrap font-mono">{{ selectedLog.content?.prompt }}</pre>
             </div>
             <div class="space-y-2">
               <h4 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <CheckCircle2 class="w-4 h-4 text-green-500" /> Response
               </h4>
-              <pre class="p-4 bg-gray-900 text-gray-300 rounded-xl text-xs overflow-auto max-h-60 whitespace-pre-wrap font-mono">{{ selectedLog.response }}</pre>
+              <pre class="p-4 bg-gray-900 text-gray-300 rounded-xl text-xs overflow-auto max-h-60 whitespace-pre-wrap font-mono">{{ selectedLog.content?.response }}</pre>
             </div>
-            <div v-if="selectedLog.error" class="space-y-2">
+            <div v-if="selectedLog.content?.error" class="space-y-2">
               <h4 class="text-sm font-bold text-red-500 flex items-center gap-2">
                 <AlertCircle class="w-4 h-4" /> Error
               </h4>
-              <pre class="p-4 bg-red-900/20 text-red-400 border border-red-900/50 rounded-xl text-xs overflow-auto whitespace-pre-wrap font-mono">{{ selectedLog.error }}</pre>
+              <pre class="p-4 bg-red-900/20 text-red-400 border border-red-900/50 rounded-xl text-xs overflow-auto whitespace-pre-wrap font-mono">{{ selectedLog.content?.error }}</pre>
             </div>
-            <div v-if="selectedLog.media_path" class="space-y-2">
+            <div v-if="selectedLog.media && selectedLog.media.length > 0" class="space-y-2">
               <h4 class="text-sm font-bold text-purple-500 flex items-center gap-2">
-                <Image class="w-4 h-4" /> Media File
+                <Image class="w-4 h-4" /> Media Files
               </h4>
-              <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl flex items-center justify-between">
-                <span class="text-xs font-mono truncate mr-4">{{ selectedLog.media_path }}</span>
-                <a :href="`/media/${selectedLog.media_path.split('/').pop()}`" target="_blank" class="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-lg transition-colors">查看媒体</a>
+              <div v-for="m in selectedLog.media" :key="m.file_path" class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl flex items-center justify-between mb-2">
+                <span class="text-xs font-mono truncate mr-4">{{ m.file_path }}</span>
+                <a :href="`/api/media/${m.file_path.split('/').pop()}`" target="_blank" class="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-lg transition-colors">查看媒体</a>
               </div>
             </div>
           </div>

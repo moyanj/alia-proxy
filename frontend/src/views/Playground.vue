@@ -112,9 +112,11 @@ async function fetchModels() {
     const providers = Object.keys(allModels.value)
     if (providers.length > 0) {
       const firstProvider = providers[0]
-      const models = allModels.value[firstProvider]
-      if (models && models.length > 0) {
-        form.model = `${firstProvider}/${models[0].id || models[0]}`
+      if (firstProvider) {
+        const models = (allModels.value as any)[firstProvider]
+        if (Array.isArray(models) && models.length > 0) {
+          form.model = `${firstProvider}/${models[0].id || models[0]}`
+        }
       }
     }
   } catch (err) {

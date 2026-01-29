@@ -60,6 +60,40 @@
       </div>
     </div>
 
+    <!-- Daily Trends -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+      <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+        <h4 class="text-base font-semibold text-gray-900 dark:text-white">用量趋势 (最近7天)</h4>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">
+              <th class="px-6 py-4 font-semibold">日期</th>
+              <th class="px-6 py-4 font-semibold">模型</th>
+              <th class="px-6 py-4 font-semibold">请求数</th>
+              <th class="px-6 py-4 font-semibold">输入 Tokens</th>
+              <th class="px-6 py-4 font-semibold">输出 Tokens</th>
+              <th class="px-6 py-4 font-semibold">总计</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+            <tr v-for="trend in analytics?.daily_trends" :key="`${trend.date}-${trend.model}`" class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+              <td class="px-6 py-4 text-gray-700 dark:text-gray-300">{{ trend.date }}</td>
+              <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">{{ trend.model }}</td>
+              <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ trend.request_count }}</td>
+              <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ trend.input_tokens }}</td>
+              <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ trend.output_tokens }}</td>
+              <td class="px-6 py-4 font-semibold text-blue-600 dark:text-blue-400">{{ trend.total_tokens }}</td>
+            </tr>
+            <tr v-if="!analytics?.daily_trends || analytics.daily_trends.length === 0" class="text-center">
+              <td colspan="6" class="py-12 text-gray-400">暂无趋势数据</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Health Check Status -->
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
       <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
@@ -93,25 +127,29 @@ import { useUIStore } from '@/stores/ui'
 import { 
   getStats, 
   getHealth, 
-  type Stats 
+  getAnalytics,
+  type Stats,
+  type Analytics
 } from '@/api'
 import { 
   Activity, 
   Cpu, 
   Server, 
-  Database 
+  Clock,
+  Zap
 } from 'lucide-vue-next'
 
 const ui = useUIStore()
 const stats = ref<Stats | null>(null)
+const analytics = ref<Analytics | null>(null)
 const health = ref<any>(null)
 const loadingHealth = ref(false)
 
 const summaryStats = computed(() => [
-  { label: '总请求数', value: stats.value?.total_requests || 0, icon: Activity },
-  { label: '活跃提供商', value: Object.keys(stats.value?.providers_config || {}).length, icon: Server },
-  { label: '使用模型数', value: Object.keys(stats.value?.model_counts || {}).length, icon: Cpu },
-  { label: '数据库负载', value: '正常', icon: Database },
+  { label: '总请求数', value: analytics.value?.summary.total_requests || stats.value?.total_requests || 0, icon: Activity },
+  { label: '平均成功率', value: (analytics.value?.summary.success_rate.toFixed(1) || '0.0') + '%', icon: Zap },
+  { label: '平均响应耗时', value: (analytics.value?.summary.avg_latency.toFixed(2) || '0.00') + 's', icon: Clock },
+  { label: '活跃模型数', value: Object.keys(stats.value?.model_counts || {}).length, icon: Cpu },
 ])
 
 async function fetchStats() {
@@ -119,6 +157,14 @@ async function fetchStats() {
     stats.value = await getStats()
   } catch (err) {
     console.error('Failed to fetch stats:', err)
+  }
+}
+
+async function fetchAnalytics() {
+  try {
+    analytics.value = await getAnalytics({ days: 7 })
+  } catch (err) {
+    console.error('Failed to fetch analytics:', err)
   }
 }
 
@@ -135,6 +181,7 @@ async function fetchHealth() {
 
 onMounted(() => {
   fetchStats()
+  fetchAnalytics()
   fetchHealth()
 })
 </script>

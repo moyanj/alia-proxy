@@ -6,18 +6,50 @@ const api = axios.create({
 
 export interface Log {
   id: number
+  request_id: string | null
   timestamp: string
+  date: string
   provider: string
   endpoint: string
   model: string
-  prompt: string | null
-  response: string | null
   prompt_tokens: number
   completion_tokens: number
   total_tokens: number
   status_code: number
-  media_path: string | null
-  error: string | null
+  latency: number
+  is_streaming: boolean
+  ip_address: string | null
+  metadata: any | null
+  content?: {
+    prompt: string | null
+    response: string | null
+    error: string | null
+  }
+  media?: Array<{
+    file_path: string
+    file_type: string
+  }>
+}
+
+export interface Analytics {
+  summary: {
+    total_requests: number
+    success_rate: number
+    avg_latency: number
+  }
+  errors: Record<string, number>
+  daily_trends: Array<{
+    date: string
+    model: string
+    request_count: number
+    input_tokens: number
+    output_tokens: number
+    total_tokens: number
+  }>
+  peaks: Record<string, {
+    max_rpm: number
+    max_tpm: number
+  }>
 }
 
 export interface Stats {
@@ -35,6 +67,8 @@ export interface ProviderConfig {
 }
 
 export const getStats = () => api.get<Stats>('/api/stats').then(res => res.data)
+export const getAnalytics = (params?: { days?: number, model?: string, provider?: string }) => 
+  api.get<Analytics>('/api/analytics', { params }).then(res => res.data)
 export const getLogs = (params: any) => api.get<Log[]>('/api/logs', { params }).then(res => res.data)
 export const getLogDetail = (id: number) => api.get<Log>(`/api/logs/${id}`).then(res => res.data)
 export const deleteLog = (id: number) => api.delete(`/api/logs/${id}`).then(res => res.data)

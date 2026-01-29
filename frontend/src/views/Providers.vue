@@ -49,11 +49,11 @@
               <button @click="fetchModelsForProvider(name)" class="text-blue-500 hover:underline">查看全部</button>
             </p>
             <div class="flex flex-wrap gap-1.5">
-              <span v-for="m in (models[name] || []).slice(0, 5)" :key="m.id" class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] rounded font-medium">
-                {{ m.id || m }}
+              <span v-for="m in (models[name] || []).slice(0, 5)" :key="(m as any).id" class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] rounded font-medium">
+                {{ (m as any).id || m }}
               </span>
               <span v-if="(models[name]?.length || 0) > 5" class="px-2 py-1 text-gray-400 text-[10px]">
-                +{{ models[name].length - 5 }} more
+                +{{ (models[name]?.length || 0) - 5 }} more
               </span>
               <span v-if="!models[name]" class="text-xs text-gray-400 italic">点击刷新获取列表</span>
             </div>
