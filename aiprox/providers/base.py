@@ -137,6 +137,7 @@ class EmbeddingsResponse(BaseModel):
     嵌入响应模型。
     """
 
+    id: Optional[str] = None  # 响应唯一 ID
     object: str = "list"
     data: List[Dict[str, Any]]
     model: str

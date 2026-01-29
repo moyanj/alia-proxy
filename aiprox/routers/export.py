@@ -31,7 +31,11 @@ async def export_logs(format: ExportFormat = Query(ExportFormat.JSONL)):
     支持多种格式，通过流式响应下载。
     """
     # 只导出聊天完成类型的日志
-    chat_logs = await RequestLog.filter(endpoint="chat").all()
+    chat_logs = (
+        await RequestLog.filter(endpoint="chat")
+        .prefetch_related("content", "media")
+        .all()
+    )
 
     # 如果没有找到任何 chat 日志，返回带有说明的空文件
     if not chat_logs:
@@ -69,12 +73,19 @@ async def export_logs(format: ExportFormat = Query(ExportFormat.JSONL)):
                 "prompt_tokens",
                 "completion_tokens",
                 "status_code",
+                "latency",
+                "ip_address",
                 "media_path",
                 "prompt",
                 "response",
             ]
         )
         for log in chat_logs:
+            # 兼容处理新模型
+            prompt = log.content.prompt if log.content else ""
+            response = log.content.response if log.content else ""
+            media_path = log.media[0].file_path if log.media else ""
+
             writer.writerow(
                 [
                     log.id,
@@ -85,9 +96,11 @@ async def export_logs(format: ExportFormat = Query(ExportFormat.JSONL)):
                     log.prompt_tokens,
                     log.completion_tokens,
                     log.status_code,
-                    log.media_path,
-                    log.prompt,
-                    log.response,
+                    log.latency,
+                    log.ip_address,
+                    media_path,
+                    prompt,
+                    response,
                 ]
             )
         output.seek(0)
@@ -101,23 +114,25 @@ async def export_logs(format: ExportFormat = Query(ExportFormat.JSONL)):
     elif format == "sharegpt":
         sharegpt_logs = []
         for log in chat_logs:
-            if log.prompt and log.response:
+            prompt = log.content.prompt if log.content else ""
+            response = log.content.response if log.content else ""
+            if prompt and response:
                 try:
                     # 尝试解析原始 prompt 消息列表
-                    messages = eval(log.prompt)
+                    messages = eval(prompt)
                     conversations = []
                     for m in messages:
                         role = "human" if m["role"] == "user" else "gpt"
                         conversations.append({"from": role, "value": m["content"]})
-                    conversations.append({"from": "gpt", "value": log.response})
+                    conversations.append({"from": "gpt", "value": response})
                     sharegpt_logs.append({"conversations": conversations})
                 except:
                     # 解析失败则回退到简单的单轮对话
                     sharegpt_logs.append(
                         {
                             "conversations": [
-                                {"from": "human", "value": log.prompt},
-                                {"from": "gpt", "value": log.response},
+                                {"from": "human", "value": prompt},
+                                {"from": "gpt", "value": response},
                             ]
                         }
                     )
@@ -140,6 +155,9 @@ async def export_logs(format: ExportFormat = Query(ExportFormat.JSONL)):
     elif format == "jsonl":
         jsonl_logs = []
         for log in chat_logs:
+            prompt = log.content.prompt if log.content else ""
+            response = log.content.response if log.content else ""
+            media_path = log.media[0].file_path if log.media else ""
             jsonl_logs.append(
                 {
                     "id": log.id,
@@ -150,9 +168,11 @@ async def export_logs(format: ExportFormat = Query(ExportFormat.JSONL)):
                     "prompt_tokens": log.prompt_tokens,
                     "completion_tokens": log.completion_tokens,
                     "status_code": log.status_code,
-                    "media_path": log.media_path,
-                    "prompt": log.prompt,
-                    "response": log.response,
+                    "latency": log.latency,
+                    "ip_address": log.ip_address,
+                    "media_path": media_path,
+                    "prompt": prompt,
+                    "response": response,
                 }
             )
 
