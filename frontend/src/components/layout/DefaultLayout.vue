@@ -49,8 +49,8 @@ import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import GlobalUI from './GlobalUI.vue'
 import {
-
   LayoutDashboard,
+  BarChart3,
   ListTodo,
   ShieldCheck,
   Terminal,
@@ -63,6 +63,7 @@ const isDark = ref(false)
 
 const navItems = [
   { name: '仪表盘', path: '/', icon: LayoutDashboard },
+  { name: '分析报告', path: '/analytics', icon: BarChart3 },
   { name: '请求日志', path: '/logs', icon: ListTodo },
   { name: '提供商配置', path: '/providers', icon: ShieldCheck },
   { name: '演练场', path: '/playground', icon: Terminal },
