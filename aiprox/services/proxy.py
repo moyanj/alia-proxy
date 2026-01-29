@@ -146,12 +146,16 @@ class ProxyService:
                         if "content" in delta:
                             full_content += delta["content"]
 
-                        # 某些提供商在最后一块返回 usage
-                        if "usage" in chunk and chunk["usage"]:
-                            usage = chunk["usage"]
-                            prompt_tokens = usage.get("prompt_tokens", 0)
-                            completion_tokens = usage.get("completion_tokens", 0)
-                            total_tokens = usage.get("total_tokens", 0)
+                    # 某些提供商在最后一块返回 usage
+                    if "usage" in chunk and chunk["usage"]:
+                        usage = chunk["usage"]
+                        prompt_tokens = usage.get("prompt_tokens", prompt_tokens)
+                        completion_tokens = usage.get(
+                            "completion_tokens", completion_tokens
+                        )
+                        total_tokens = usage.get(
+                            "total_tokens", prompt_tokens + completion_tokens
+                        )
 
                     yield f"data: {json.dumps(chunk)}\n\n"
             yield "data: [DONE]\n\n"

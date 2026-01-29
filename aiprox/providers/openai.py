@@ -76,6 +76,9 @@ class OpenAIProvider(BaseProvider):
             }
             payload = request.model_dump(exclude_none=True)
             payload["stream"] = True
+            # 默认请求包含 usage，以便记录 Token 消耗
+            if "stream_options" not in payload:
+                payload["stream_options"] = {"include_usage": True}
 
             async with client.stream(
                 "POST",

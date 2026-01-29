@@ -83,6 +83,9 @@ class ChatRequest(BaseModel):
     tools: Optional[List[Tool]] = None  # 可选的工具列表
     tool_choice: Optional[Union[str, Dict[str, Any]]] = None  # 工具选择策略
     response_format: Optional[Dict[str, Any]] = None  # 响应格式
+    stream_options: Optional[Dict[str, Any]] = (
+        None  # 流式响应选项 (如: {"include_usage": True})
+    )
 
 
 class Usage(BaseModel):

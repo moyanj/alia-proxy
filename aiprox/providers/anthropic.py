@@ -329,6 +329,7 @@ class AnthropicProvider(BaseProvider):
                 response.raise_for_status()
                 message_id = ""
                 model_name = ""
+                prompt_tokens = 0
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):
                         data_str = line[6:]
@@ -338,6 +339,11 @@ class AnthropicProvider(BaseProvider):
                         if event_type == "message_start":
                             message_id = event_data["message"]["id"]
                             model_name = event_data["message"]["model"]
+                            prompt_tokens = (
+                                event_data["message"]
+                                .get("usage", {})
+                                .get("input_tokens", 0)
+                            )
                             yield {
                                 "id": message_id,
                                 "object": "chat.completion.chunk",
@@ -350,6 +356,11 @@ class AnthropicProvider(BaseProvider):
                                         "finish_reason": None,
                                     }
                                 ],
+                                "usage": {
+                                    "prompt_tokens": prompt_tokens,
+                                    "completion_tokens": 0,
+                                    "total_tokens": prompt_tokens,
+                                },
                             }
 
                         elif event_type == "content_block_delta":
@@ -448,13 +459,12 @@ class AnthropicProvider(BaseProvider):
                                 ],
                                 "usage": (
                                     {
-                                        "prompt_tokens": 0,  # Anthropic 流不实时返回总用量，除非收尾
+                                        "prompt_tokens": prompt_tokens,
                                         "completion_tokens": event_data["usage"][
                                             "output_tokens"
                                         ],
-                                        "total_tokens": event_data["usage"][
-                                            "output_tokens"
-                                        ],
+                                        "total_tokens": prompt_tokens
+                                        + event_data["usage"]["output_tokens"],
                                     }
                                     if "usage" in event_data
                                     else None
