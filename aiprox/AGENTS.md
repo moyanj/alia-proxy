@@ -1,22 +1,39 @@
-# AI PROXY CORE
+# AI PROXY BACKEND CORE
 
 ## OVERVIEW
 FastAPI-based unified AI proxy handler. Manages multi-provider routing, unified logging to SQLite, and media persistence.
 
-## CORE MODULES
-- **main.py**: Entry point. Manages lifespan (ORM init) and mounts routers.
-- **config.py**: Pydantic `Settings`. Loads `config.toml` and env `AIPROX_*`.
-- **models.py**: Tortoise-ORM schema. `RequestLog` stores prompts, usage, and media refs.
-- **services/proxy.py**: Orchestrator. Resolves providers via factory and manages logging/media logic.
-- **routers/deps.py**: FastAPI dependencies. `get_proxy_service` parses `provider/model`.
+## STRUCTURE
+```
+aiprox/
+├── providers/        # Provider strategy implementations
+├── routers/          # API endpoints (OpenAI-compatible)
+├── services/         # Core business logic (Logger, Proxy, Media)
+├── models.py         # Tortoise-ORM schema
+├── config.py         # Pydantic Settings
+└── main.py           # Entry point & lifespan management
+```
 
-## DATA FLOW
-1. **Request**: Client sends OpenAI-compatible JSON to `/v1/...`.
-2. **Dependency**: `get_proxy_service` resolves provider ID from `model` field.
-3. **Execution**: `ProxyService` calls provider, logs results, and saves media via `MediaService`.
-4. **Response**: Streamed or buffered response returned to client.
+## WHERE TO LOOK
+| Task | Location | Notes |
+|------|----------|-------|
+| **App Entry** | `main.py` | FastAPI app creation, middleware, router mounting |
+| **Config** | `config.py` | Loads settings from `config.toml` |
+| **Database** | `models.py` | Defines `RequestLog` and other tables |
+| **Dependencies** | `routers/deps.py` | Dependency injection (e.g. `get_proxy_service`) |
+
+## CODE MAP
+| Symbol | Type | Location | Role |
+|--------|------|----------|------|
+| `create_app` | Function | `main.py` | App factory |
+| `Settings` | Class | `config.py` | Configuration singleton |
+| `RequestLog` | Class | `models.py` | Main log entity |
 
 ## CONVENTIONS
-- **Provider Abstraction**: Routers never import concrete providers.
+- **Provider Abstraction**: Routers never import concrete providers. Use `ProxyService`.
 - **Schema Validation**: All internal data uses Pydantic `BaseModel`.
 - **Telegraphic Style**: Keep documentation focused on "where" and "how".
+
+## ANTI-PATTERNS
+- **Sync DB Access**: `models.py` usage must be async.
+- **Global State**: Avoid global variables; use `config.py` or Dependency Injection.

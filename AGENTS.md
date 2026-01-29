@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-01-29T13:11:00Z
+**Generated:** 2026-01-29T13:15:00Z
 **Commit:** current
 **Branch:** main
 
@@ -10,14 +10,15 @@ Unified AI API proxy built with FastAPI, supporting multiple providers (OpenAI, 
 ## STRUCTURE
 ```
 .
-├── aiprox/               # Backend source code
-│   ├── providers/        # Provider strategy implementations
+├── aiprox/               # Backend source code (FastAPI)
+│   ├── providers/        # AI Provider implementations (OpenAI, Anthropic)
 │   ├── routers/          # API endpoints (OpenAI-compatible)
-│   ├── services/         # Logger, Proxy, and Media services
+│   ├── services/         # Core business logic (Proxy, Logger, Media)
 │   ├── models.py         # Tortoise-ORM database models
-│   ├── config.py         # Settings management (Pydantic)
 │   └── main.py           # Application entry point
 ├── frontend/             # Vue.js Web Dashboard
+│   ├── src/views/        # Page views (Dashboard, Logs, Playground)
+│   └── src/stores/       # State management (Pinia)
 ├── data/                 # Persistent storage (SQLite DB, Media)
 ├── tests/                # Pytest suite
 ├── config.toml           # Main provider configuration
@@ -27,11 +28,12 @@ Unified AI API proxy built with FastAPI, supporting multiple providers (OpenAI, 
 ## WHERE TO LOOK
 | Task | Location | Notes |
 |------|----------|-------|
-| Add new AI Provider | `aiprox/providers/` | Implement `BaseProvider` & register in `factory.py` |
-| Add new API Endpoint | `aiprox/routers/` | FastAPI routers (OpenAI compatible) |
-| Database changes | `aiprox/models.py` | Tortoise-ORM Models |
-| Configuration changes | `aiprox/config.py` | Pydantic Settings & `config.toml` |
-| Business Logic | `aiprox/services/` | `proxy.py` orchestrates execution |
+| **Add AI Provider** | `aiprox/providers/` | Implement `BaseProvider` & register in `factory.py` |
+| **Add API Endpoint** | `aiprox/routers/` | FastAPI routers (OpenAI compatible) |
+| **Frontend Page** | `frontend/src/views/` | Vue.js views |
+| **Database Schema** | `aiprox/models.py` | Tortoise-ORM Models |
+| **Configuration** | `aiprox/config.py` | Pydantic Settings & `config.toml` |
+| **Business Logic** | `aiprox/services/` | `proxy.py` orchestrates execution |
 
 ## CODE MAP
 | Symbol | Type | Location | Role |
@@ -43,23 +45,25 @@ Unified AI API proxy built with FastAPI, supporting multiple providers (OpenAI, 
 | `Settings` | Class | `aiprox/config.py` | Global configuration container |
 
 ## CONVENTIONS
-- **Async-Only**: Use `async` for all route handlers and I/O. Use `httpx.AsyncClient`.
-- **Dependency**: Managed via `uv`. Use `uv run` or `uv add`.
-- **Testing**: Use `pytest` with in-memory SQLite isolation (`autouse` fixture).
-- **Naming**: `aiprox/` is the core package (often referred to as `app` in generic docs).
+- **Async-Only**: Use `async` for all backend route handlers and I/O.
+- **Dependency**: Python: `uv`; Frontend: `pnpm`.
+- **Testing**: `pytest` with in-memory SQLite isolation.
+- **Naming**: `aiprox/` is the core backend package.
 
 ## ANTI-PATTERNS (THIS PROJECT)
 - **Hardcoded Keys**: NEVER put API keys in code. Use `config.toml`.
-- **Sync DB calls**: DO NOT use synchronous ORMs or blocking drivers (e.g. `requests`).
+- **Sync DB calls**: DO NOT use synchronous ORMs or blocking drivers.
 - **Direct Provider Import**: Routers must use `ProxyService` or `ProviderFactory`.
 
 ## COMMANDS
 ```bash
-# Run locally
+# Backend
 uv run python -m aiprox.main
-
-# Run tests
 uv run pytest
+
+# Frontend
+cd frontend && pnpm dev
+cd frontend && pnpm build
 
 # Docker
 docker-compose up --build
