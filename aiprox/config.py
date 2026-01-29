@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Union
 from pydantic import BaseModel, ConfigDict
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import toml
@@ -11,10 +11,19 @@ class ProviderConfig(BaseModel):
     """
 
     type: str  # 提供商类型 (如: openai, anthropic, ollama)
-    api_key: Optional[str] = None  # API 密钥
+    api_key: Optional[Union[str, List[str]]] = None  # API 密钥 (单个或多个)
     base_url: Optional[str] = None  # 基础 URL (用于自建或代理服务)
 
     model_config = ConfigDict(extra="allow")
+
+
+class MappingConfig(BaseModel):
+    """
+    模型映射配置，支持多目标和策略。
+    """
+
+    targets: List[str]  # 目标模型列表 (provider/model)
+    strategy: str = "round-robin"  # 策略: round-robin (默认), random
 
 
 class Settings(BaseSettings):
@@ -27,6 +36,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite://data/aiprox.db"  # 数据库连接字符串
     media_dir: str = "data/media"  # 媒体文件存储目录
     providers: Dict[str, ProviderConfig] = {}  # 注册的提供商配置列表
+    mapping: Dict[str, Union[str, List[str], MappingConfig]] = {}  # 模型映射表
 
     model_config = SettingsConfigDict(env_prefix="AIPROX_")
 

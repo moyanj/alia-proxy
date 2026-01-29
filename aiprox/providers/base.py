@@ -157,8 +157,30 @@ class BaseProvider(ABC):
         :param config: 提供商配置对象
         """
         self.config = config
-        self.api_key = config.api_key
+        raw_key = config.api_key
+        if isinstance(raw_key, list):
+            self._api_keys = raw_key
+        elif isinstance(raw_key, str):
+            self._api_keys = [raw_key]
+        else:
+            self._api_keys = []
+
+        self._key_index = 0
         self.base_url = config.base_url
+
+    @property
+    def api_key(self) -> str:
+        """
+        获取当前使用的 API Key。
+        支持多 Key 轮换逻辑。
+        """
+        if not self._api_keys:
+            return ""
+        key = self._api_keys[self._key_index]
+        # 轮换到下一个 Key
+        if len(self._api_keys) > 1:
+            self._key_index = (self._key_index + 1) % len(self._api_keys)
+        return key
 
     @abstractmethod
     async def chat(self, request: ChatRequest) -> ChatResponse:

@@ -113,9 +113,14 @@ class AnthropicProvider(BaseProvider):
                 "content-type": "application/json",
             }
 
-            # 提取系统消息
-            system_message = next(
-                (m.content for m in request.messages if m.role == "system"), None
+            # 提取并合并所有系统消息
+            system_messages = [
+                m.content for m in request.messages if m.role == "system"
+            ]
+            system_message = (
+                "\n".join([str(m) for m in system_messages])
+                if system_messages
+                else None
             )
             # 过滤掉系统消息
             messages = [m for m in request.messages if m.role != "system"]
@@ -146,6 +151,19 @@ class AnthropicProvider(BaseProvider):
                     }
                     for t in request.tools
                 ]
+                # 处理工具选择策略转换
+                if request.tool_choice:
+                    if request.tool_choice == "auto":
+                        payload["tool_choice"] = {"type": "auto"}
+                    elif request.tool_choice == "required":
+                        payload["tool_choice"] = {"type": "any"}
+                    elif isinstance(request.tool_choice, dict):
+                        func_name = request.tool_choice.get("function", {}).get("name")
+                        if func_name:
+                            payload["tool_choice"] = {
+                                "type": "tool",
+                                "name": func_name,
+                            }
 
             response = await client.post(
                 f"{self.base_url}/messages",
@@ -287,6 +305,19 @@ class AnthropicProvider(BaseProvider):
                     }
                     for t in request.tools
                 ]
+                # 处理工具选择策略转换
+                if request.tool_choice:
+                    if request.tool_choice == "auto":
+                        payload["tool_choice"] = {"type": "auto"}
+                    elif request.tool_choice == "required":
+                        payload["tool_choice"] = {"type": "any"}
+                    elif isinstance(request.tool_choice, dict):
+                        func_name = request.tool_choice.get("function", {}).get("name")
+                        if func_name:
+                            payload["tool_choice"] = {
+                                "type": "tool",
+                                "name": func_name,
+                            }
 
             async with client.stream(
                 "POST",
@@ -323,6 +354,7 @@ class AnthropicProvider(BaseProvider):
 
                         elif event_type == "content_block_delta":
                             delta = event_data["delta"]
+                            block_index = event_data.get("index", 0)
                             if delta["type"] == "text_delta":
                                 yield {
                                     "id": message_id,
@@ -350,7 +382,7 @@ class AnthropicProvider(BaseProvider):
                                             "delta": {
                                                 "tool_calls": [
                                                     {
-                                                        "index": 0,
+                                                        "index": block_index,
                                                         "function": {
                                                             "arguments": delta[
                                                                 "partial_json"
@@ -365,6 +397,7 @@ class AnthropicProvider(BaseProvider):
                                 }
 
                         elif event_type == "content_block_start":
+                            block_index = event_data.get("index", 0)
                             if event_data["content_block"]["type"] == "tool_use":
                                 block = event_data["content_block"]
                                 yield {
@@ -378,7 +411,7 @@ class AnthropicProvider(BaseProvider):
                                             "delta": {
                                                 "tool_calls": [
                                                     {
-                                                        "index": 0,
+                                                        "index": block_index,
                                                         "id": block["id"],
                                                         "type": "function",
                                                         "function": {

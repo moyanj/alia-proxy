@@ -1,8 +1,9 @@
-from typing import Dict, Optional, Tuple, Type
+import random
+from typing import Dict, Optional, Tuple, Type, List, Union
 from .openai import OpenAIProvider
 from .anthropic import AnthropicProvider
 from .ollama import OllamaProvider
-from ..config import settings
+from ..config import settings, MappingConfig
 from .base import BaseProvider
 
 
@@ -18,6 +19,7 @@ class ProviderFactory:
         "anthropic": AnthropicProvider,
         "ollama": OllamaProvider,
     }
+    _mapping_indices: Dict[str, int] = {}  # 存储 mapping 轮换的当前索引
 
     @classmethod
     def register(cls, provider_type: str, provider_class: Type[BaseProvider]):
@@ -30,15 +32,48 @@ class ProviderFactory:
     def resolve_model(cls, model_field: str) -> Tuple[str, str]:
         """
         解析请求中的模型字段。
+        支持从 settings.mapping 进行别名映射。
+        支持多目标映射及轮换/随机策略。
         期望格式: <提供商配置名>/<模型标识符> (例如: gpt4-main/gpt-4o)
         :return: (提供商名称, 模型名称)
         """
+        # 1. 检查是否存在别名映射
+        if model_field in settings.mapping:
+            config = settings.mapping[model_field]
+
+            # 处理 MappingConfig 对象
+            if isinstance(config, MappingConfig):
+                targets = config.targets
+                strategy = config.strategy
+            # 处理 List[str] 简写
+            elif isinstance(config, list):
+                targets = config
+                strategy = "round-robin"
+            # 处理 str 简写
+            else:
+                targets = [config]
+                strategy = "round-robin"
+
+            if not targets:
+                raise ValueError(f"No targets defined for mapping: {model_field}")
+
+            # 根据策略选择目标
+            if strategy == "random":
+                target = random.choice(targets)
+            else:  # round-robin
+                idx = cls._mapping_indices.get(model_field, 0)
+                target = targets[idx]
+                cls._mapping_indices[model_field] = (idx + 1) % len(targets)
+
+            model_field = target
+
+        # 2. 标准解析格式
         if "/" in model_field:
             parts = model_field.split("/", 1)
             return parts[0], parts[1]
 
         raise ValueError(
-            f"Invalid model field format: {model_field}. Expected: <provider>/<model>"
+            f"Invalid model field format: {model_field}. Expected: <provider>/<model> or a mapped alias."
         )
 
     @classmethod
