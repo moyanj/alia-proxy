@@ -37,8 +37,8 @@ async def get_analytics(
     success_count = await base_query.filter(status_code__lt=400).count()
     avg_latency = await base_query.annotate(avg_lat=Avg("latency")).values("avg_lat")
 
-    # 2. 错误分布
-    error_stats = (
+    # 2. 错误分布 (全局摘要)
+    error_summary = (
         await base_query.filter(status_code__gte=400)
         .annotate(count=Count("id"))
         .group_by("status_code")
@@ -46,10 +46,25 @@ async def get_analytics(
     )
 
     # 3. 趋势数据 (按天聚合)
-    # 使用新的 date 字段以加速聚合
-    daily_trends = await base_query.group_by("date").order_by("date").values("date")
+    # 总体请求数与成功率趋势
+    overall_daily_stats = (
+        await base_query.group_by("date")
+        .annotate(
+            total=Count("id"),
+            success=RawSQL("SUM(CASE WHEN status_code < 400 THEN 1 ELSE 0 END)"),
+        )
+        .values("date", "total", "success")
+    )
 
-    # 获取每日请求数和 Token 数 (按模型分组)
+    # 错误趋势 (按天聚合错误代码)
+    error_daily_stats = (
+        await base_query.filter(status_code__gte=400)
+        .group_by("date", "status_code")
+        .annotate(count=Count("id"))
+        .values("date", "status_code", "count")
+    )
+
+    # 每个模型的请求数和 Token 数趋势
     model_daily_stats = (
         await base_query.group_by("date", "model")
         .annotate(
@@ -68,25 +83,16 @@ async def get_analytics(
         )
     )
 
-    # 4. 速率限制细分 (RPM/TPM 峰值)
-    # 按分钟聚合查找峰值 (仍然使用 timestamp 的分钟部分)
-    rate_stats = (
+    # 4. 速率限制细分 (RPM/TPM 趋势，用于仪表盘图表)
+    # 按分钟聚合
+    minute_usage = (
         await base_query.annotate(
             minute=RawSQL("strftime('%Y-%m-%d %H:%M', timestamp)")
         )
         .group_by("minute", "model")
         .annotate(rpm=Count("id"), tpm=Sum("total_tokens"))
-        .values("model", "rpm", "tpm")
+        .values("minute", "model", "rpm", "tpm")
     )
-
-    # 计算峰值
-    peaks = {}
-    for item in rate_stats:
-        m = item["model"]
-        if m not in peaks:
-            peaks[m] = {"max_rpm": 0, "max_tpm": 0}
-        peaks[m]["max_rpm"] = max(peaks[m]["max_rpm"], item["rpm"])
-        peaks[m]["max_tpm"] = max(peaks[m]["max_tpm"], item["tpm"])
 
     return {
         "summary": {
@@ -98,9 +104,11 @@ async def get_analytics(
             if avg_latency and avg_latency[0]["avg_lat"]
             else 0,
         },
-        "errors": {str(item["status_code"]): item["count"] for item in error_stats},
-        "daily_trends": model_daily_stats,
-        "peaks": peaks,
+        "errors": {str(item["status_code"]): item["count"] for item in error_summary},
+        "error_trends": error_daily_stats,
+        "overall_trends": overall_daily_stats,
+        "model_trends": model_daily_stats,
+        "minute_usage": minute_usage,
     }
 
 

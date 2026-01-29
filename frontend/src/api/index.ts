@@ -38,7 +38,17 @@ export interface Analytics {
     avg_latency: number
   }
   errors: Record<string, number>
-  daily_trends: Array<{
+  error_trends: Array<{
+    date: string
+    status_code: number
+    count: number
+  }>
+  overall_trends: Array<{
+    date: string
+    total: number
+    success: number
+  }>
+  model_trends: Array<{
     date: string
     model: string
     request_count: number
@@ -46,9 +56,11 @@ export interface Analytics {
     output_tokens: number
     total_tokens: number
   }>
-  peaks: Record<string, {
-    max_rpm: number
-    max_tpm: number
+  minute_usage: Array<{
+    minute: string
+    model: string
+    rpm: number
+    tpm: number
   }>
 }
 

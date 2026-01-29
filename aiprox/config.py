@@ -1,5 +1,8 @@
 import os
 from typing import Dict, Optional, List, Union
+
+# Add missing imports
+from pydantic import BaseSettings, SettingsConfigDict
 from pydantic import BaseModel, ConfigDict
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import toml
