@@ -183,6 +183,7 @@ import { ref, onMounted, reactive } from 'vue'
 import { useUIStore } from '@/stores/ui'
 import { 
   getLogs, 
+  getLogDetail,
   getStats, 
   deleteLog,
   type Log 
@@ -262,8 +263,15 @@ function getStatusClass(code: number) {
   return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
 }
 
-function openDetail(log: Log) {
-  selectedLog.value = log
+async function openDetail(log: Log) {
+  try {
+    // 列表不包含 content 和 media，点击详情时实时获取完整数据
+    const detail = await getLogDetail(log.id)
+    selectedLog.value = detail
+  } catch (err) {
+    console.error('Failed to fetch log detail:', err)
+    ui.showToast('获取详情失败', 'error')
+  }
 }
 
 async function onDeleteLog(id: number) {

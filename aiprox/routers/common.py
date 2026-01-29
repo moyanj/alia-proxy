@@ -131,6 +131,7 @@ async def get_logs(
 ):
     """
     获取请求日志列表，支持过滤和分页。
+    列表仅返回元数据，不包含大文本内容。
     """
     query = RequestLog.all()
     if provider:
@@ -142,24 +143,38 @@ async def get_logs(
     if status_code:
         query = query.filter(status_code=status_code)
 
-    # 预加载 content 和 media 以便返回完整信息
-    return (
-        await query.order_by("-timestamp")
-        .limit(limit)
-        .offset(offset)
-        .prefetch_related("content", "media")
-    )
+    return await query.order_by("-timestamp").limit(limit).offset(offset)
 
 
 @router.get("/api/logs/{log_id}")
 async def get_log_detail(log_id: int):
     """
     获取特定请求日志的详细信息。
+    手动序列化关联的 content 和 media 数据。
     """
     log = await RequestLog.get_or_none(id=log_id).prefetch_related("content", "media")
     if not log:
         raise HTTPException(status_code=404, detail="Log not found")
-    return log
+
+    # 转换为字典并补充关联数据
+    data = dict(log)
+    data["timestamp"] = log.timestamp.isoformat()
+    data["date"] = log.date.isoformat()
+
+    if log.content:
+        data["content"] = {
+            "prompt": log.content.prompt,
+            "response": log.content.response,
+            "error": log.content.error,
+        }
+    else:
+        data["content"] = None
+
+    data["media"] = [
+        {"file_path": m.file_path, "file_type": m.file_type} for m in log.media
+    ]
+
+    return data
 
 
 @router.delete("/api/logs/{log_id}")
