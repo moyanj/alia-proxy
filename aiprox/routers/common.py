@@ -73,7 +73,7 @@ async def get_analytics(
 
     # 每个模型的请求数和 Token 数趋势
     model_daily_stats = (
-        await base_query.group_by("date", "model")
+        await base_query.group_by("date", "provider", "model")
         .annotate(
             request_count=Count("id"),
             input_tokens=Sum("prompt_tokens"),
@@ -82,6 +82,7 @@ async def get_analytics(
         )
         .values(
             "date",
+            "provider",
             "model",
             "request_count",
             "input_tokens",
@@ -96,17 +97,17 @@ async def get_analytics(
         await base_query.annotate(
             minute=RawSQL("strftime('%Y-%m-%d %H:%M', timestamp)")
         )
-        .group_by("minute", "model")
+        .group_by("minute", "provider", "model")
         .annotate(rpm=Count("id"), tpm=Sum("total_tokens"))
-        .values("minute", "model", "rpm", "tpm")
+        .values("minute", "provider", "model", "rpm", "tpm")
     )
 
     return {
         "summary": {
             "total_requests": total_count,
-            "success_rate": (success_count / total_count * 100)
-            if total_count > 0
-            else 100,
+            "success_rate": (
+                (success_count / total_count * 100) if total_count > 0 else 100
+            ),
             "avg_latency": avg_latency_val,
         },
         "errors": {str(item["status_code"]): item["count"] for item in error_summary},
@@ -272,21 +273,45 @@ async def get_stats():
         await RequestLog.all()
         .annotate(count=Count("id"))
         .group_by("provider")
+        .order_by("-count")
+        .limit(5)
         .values("provider", "count")
     )
 
-    # 按模型统计
-    model_stats = (
+    # 按模型统计 (请求数)
+    model_request_stats = (
         await RequestLog.all()
         .annotate(count=Count("id"))
-        .group_by("model")
-        .values("model", "count")
+        .group_by("provider", "model")  # Group by both provider and model
+        .order_by("-count")
+        .limit(5)
+        .values("provider", "model", "count")
+    )
+
+    # 按模型统计 (Token消耗)
+    model_token_stats = (
+        await RequestLog.all()
+        .annotate(total_tokens=Sum("total_tokens"))
+        .group_by("provider", "model")  # Group by both provider and model
+        .order_by("-total_tokens")
+        .limit(5)
+        .values("provider", "model", "total_tokens")
     )
 
     stats = {
         "total_requests": total_requests,
         "provider_counts": {item["provider"]: item["count"] for item in provider_stats},
-        "model_counts": {item["model"]: item["count"] for item in model_stats},
+        "model_counts": {
+            f"{item['provider']}/{item['model']}": item["count"]
+            for item in model_request_stats
+        },
+        "top_models_by_tokens": [
+            {
+                "model": f"{item['provider']}/{item['model']}",
+                "total_tokens": item["total_tokens"],
+            }
+            for item in model_token_stats
+        ],
         "providers_config": {},
     }
 

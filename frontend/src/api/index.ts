@@ -50,6 +50,7 @@ export interface Analytics {
   }>
   model_trends: Array<{
     date: string
+    provider: string
     model: string
     request_count: number
     input_tokens: number
@@ -58,6 +59,7 @@ export interface Analytics {
   }>
   minute_usage: Array<{
     minute: string
+    provider: string
     model: string
     rpm: number
     tpm: number
@@ -68,6 +70,10 @@ export interface Stats {
   total_requests: number
   provider_counts: Record<string, number>
   model_counts: Record<string, number>
+  top_models_by_tokens: Array<{
+    model: string
+    total_tokens: number
+  }>
   providers_config: Record<string, { type: string }>
 }
 

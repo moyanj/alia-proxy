@@ -15,6 +15,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div v-for="(config, name) in providers" :key="name"
         class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden flex flex-col">
+
         <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-start">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
@@ -266,6 +267,7 @@ const filteredModels = computed(() => {
   }
   return []
 })
+
 const editForm = reactive({
   name: '',
   type: 'openai',

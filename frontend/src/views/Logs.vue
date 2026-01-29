@@ -65,10 +65,9 @@
                 class="bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">
                 <th class="px-6 py-4 font-semibold">ID</th>
                 <th class="px-6 py-4 font-semibold">时间</th>
-                <th class="px-6 py-4 font-semibold">提供商 / 模型</th>
+                <th class="px-6 py-4 font-semibold">模型 / 提供商</th>
                 <th class="px-6 py-4 font-semibold">端点</th>
                 <th class="px-6 py-4 font-semibold">Token 消耗</th>
-                <th class="px-6 py-4 font-semibold">延时 / 模式</th>
                 <th class="px-6 py-4 font-semibold">状态</th>
                 <th class="px-6 py-4 font-semibold text-right">操作</th>
               </tr>
@@ -79,8 +78,8 @@
                 <td class="px-6 py-4 text-gray-700 dark:text-gray-300">{{ formatTime(log.timestamp) }}</td>
                 <td class="px-6 py-4">
                   <div class="flex flex-col">
-                    <span class="font-medium text-gray-900 dark:text-white">{{ log.provider }}</span>
-                    <span class="text-xs text-gray-500">{{ log.model }}</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ log.model }}</span>
+                    <span class="text-xs text-gray-500">{{ log.provider }}</span>
                   </div>
                 </td>
                 <td class="px-6 py-4">
@@ -93,12 +92,6 @@
                   <div class="flex flex-col text-xs">
                     <span>{{ log.total_tokens }} Total</span>
                     <span class="text-[10px] opacity-70">{{ log.prompt_tokens }}P / {{ log.completion_tokens }}C</span>
-                  </div>
-                </td>
-                <td class="px-6 py-4 text-gray-600 dark:text-gray-400">
-                  <div class="flex flex-col text-xs">
-                    <span>{{ log.latency.toFixed(2) }}s</span>
-                    <span class="text-[10px] opacity-70">{{ log.is_streaming ? 'Streaming' : 'Non-stream' }}</span>
                   </div>
                 </td>
                 <td class="px-6 py-4">
@@ -166,6 +159,15 @@
             </button>
           </div>
           <div class="h-4 w-[1px] bg-gray-200 dark:bg-gray-700"></div>
+          
+          <button @click="openInPlayground" 
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors text-xs font-bold uppercase tracking-wide">
+            <Terminal class="w-4 h-4" />
+            Playground
+          </button>
+          
+          <div class="h-4 w-[1px] bg-gray-200 dark:bg-gray-700"></div>
+          
           <button @click="onDeleteLog(selectedLog.id)" class="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 rounded-lg transition-colors">
             <Trash2 class="w-5 h-5" />
           </button>
@@ -392,6 +394,7 @@
 import { ref, onMounted, reactive, computed } from 'vue'
 import MarkdownIt from 'markdown-it'
 import { useUIStore } from '@/stores/ui'
+import { usePlaygroundStore } from '@/stores/playground'
 import {
   getLogs,
   getLogDetail,
@@ -420,10 +423,12 @@ import {
   Activity,
   Trash2,
   Info,
-  Globe
+  Globe,
+  Terminal
 } from 'lucide-vue-next'
 
 const ui = useUIStore()
+const playgroundStore = usePlaygroundStore()
 const logs = ref<Log[]>([])
 const providers = ref<string[]>([])
 const selectedLog = ref<Log | null>(null)
@@ -568,6 +573,12 @@ async function onDeleteLog(id: number) {
     } catch (err) {
       ui.showToast('删除失败', 'error')
     }
+  }
+}
+
+function openInPlayground() {
+  if (selectedLog.value) {
+    playgroundStore.loadFromLog(selectedLog.value)
   }
 }
 

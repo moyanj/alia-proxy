@@ -36,7 +36,7 @@
     <div class="space-y-4">
       <div class="flex justify-between items-center">
         <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          生成内容和
+          生成内容
         </h2>
         <div class="flex items-center gap-2">
           <span class="text-sm text-gray-500">模型</span>
@@ -62,11 +62,12 @@
     <!-- Rate Limit Peaks -->
     <div class="space-y-4">
       <div class="flex justify-between items-center">
-        <h2 class="text-lg font-bold text-gray-900 dark:text-white">速率限制细分</h2>
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white">请求速率</h2>
         <div class="flex items-center gap-2">
           <span class="text-sm text-gray-500">模型</span>
           <select v-model="peakModel"
             class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1 text-sm outline-none">
+            <option value="all">所有模型 (合计)</option>
             <option v-for="m in availableModels" :key="m" :value="m">{{ m }}</option>
           </select>
         </div>
@@ -128,11 +129,11 @@ const analytics = ref<Analytics | null>(null)
 const days = ref(7)
 const refreshing = ref(false)
 const selectedModel = ref('all')
-const peakModel = ref('')
+const peakModel = ref('all')
 
 const availableModels = computed(() => {
   if (!analytics.value) return []
-  const models = new Set(analytics.value.model_trends.map(t => t.model))
+  const models = new Set(analytics.value.model_trends.map(t => `${t.provider}/${t.model}`))
   return Array.from(models)
 })
 
@@ -141,7 +142,7 @@ async function fetchAnalytics() {
   try {
     analytics.value = await getAnalytics({ days: days.value })
     if (availableModels.value.length > 0 && !peakModel.value) {
-      peakModel.value = availableModels.value[0] || ''
+      peakModel.value = 'all'
     }
   } catch (err) {
     console.error('Failed to fetch analytics:', err)
@@ -166,24 +167,24 @@ const requestTrendOption = computed(() => {
     tooltip: { trigger: 'axis' },
     legend: { bottom: 0, data: ['请求数', '成功率'], textStyle: { color: textColor.value } },
     grid: { top: 20, left: 40, right: 40, bottom: 40 },
-    xAxis: { 
-      type: 'category', 
+    xAxis: {
+      type: 'category',
       data: data.map(d => d.date),
       axisLabel: { color: textColor.value },
       axisLine: { lineStyle: { color: axisColor.value } }
     },
     yAxis: [
-      { 
-        type: 'value', 
+      {
+        type: 'value',
         name: '请求数',
         nameTextStyle: { color: textColor.value },
         axisLabel: { color: textColor.value },
         splitLine: { lineStyle: { color: axisColor.value } }
       },
-      { 
-        type: 'value', 
-        name: '成功率', 
-        max: 100, 
+      {
+        type: 'value',
+        name: '成功率',
+        max: 100,
         axisLabel: { formatter: '{value}%', color: textColor.value },
         nameTextStyle: { color: textColor.value },
         splitLine: { show: false }
@@ -218,13 +219,13 @@ const errorTrendOption = computed(() => {
     tooltip: { trigger: 'axis' },
     legend: { bottom: 0, textStyle: { color: textColor.value } },
     grid: { top: 20, left: 40, right: 20, bottom: 40 },
-    xAxis: { 
-      type: 'category', 
+    xAxis: {
+      type: 'category',
       data: dates,
       axisLabel: { color: textColor.value },
       axisLine: { lineStyle: { color: axisColor.value } }
     },
-    yAxis: { 
+    yAxis: {
       type: 'value',
       axisLabel: { color: textColor.value },
       splitLine: { lineStyle: { color: axisColor.value } }
@@ -251,15 +252,15 @@ const tokenUsageOption = computed(() => {
     tooltip: { trigger: 'axis' },
     legend: { bottom: 0, textStyle: { color: textColor.value } },
     grid: { top: 20, left: 60, right: 20, bottom: 40 },
-    xAxis: { 
-      type: 'category', 
+    xAxis: {
+      type: 'category',
       data: dates,
       axisLabel: { color: textColor.value },
       axisLine: { lineStyle: { color: axisColor.value } }
     },
-    yAxis: { 
-      type: 'value', 
-      axisLabel: { 
+    yAxis: {
+      type: 'value',
+      axisLabel: {
         formatter: (v: number) => v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : v,
         color: textColor.value
       },
@@ -270,7 +271,7 @@ const tokenUsageOption = computed(() => {
       type: 'line',
       smooth: true,
       data: dates.map(date => {
-        const item = trends.find(t => t.date === date && t.model === m)
+        const item = trends.find(t => t.date === date && `${t.provider}/${t.model}` === m)
         return item ? item.input_tokens : 0
       })
     }))
@@ -287,13 +288,13 @@ const modelRequestOption = computed(() => {
     tooltip: { trigger: 'axis' },
     legend: { bottom: 0, textStyle: { color: textColor.value } },
     grid: { top: 20, left: 40, right: 20, bottom: 40 },
-    xAxis: { 
-      type: 'category', 
+    xAxis: {
+      type: 'category',
       data: dates,
       axisLabel: { color: textColor.value },
       axisLine: { lineStyle: { color: axisColor.value } }
     },
-    yAxis: { 
+    yAxis: {
       type: 'value',
       axisLabel: { color: textColor.value },
       splitLine: { lineStyle: { color: axisColor.value } }
@@ -303,7 +304,7 @@ const modelRequestOption = computed(() => {
       type: 'line',
       smooth: true,
       data: dates.map(date => {
-        const item = trends.find(t => t.date === date && t.model === m)
+        const item = trends.find(t => t.date === date && `${t.provider}/${t.model}` === m)
         return item ? item.request_count : 0
       })
     }))
@@ -312,12 +313,31 @@ const modelRequestOption = computed(() => {
 
 const rpmPeakOption = computed(() => {
   if (!analytics.value || !peakModel.value) return {}
-  const data = analytics.value.minute_usage.filter(u => u.model === peakModel.value)
+  
+  let data
+  if (peakModel.value === 'all') {
+    // Aggregate by minute across all models
+    const aggregated = new Map<string, number>()
+    analytics.value.minute_usage.forEach(u => {
+      const current = aggregated.get(u.minute) || 0
+      aggregated.set(u.minute, current + u.rpm)
+    })
+    
+    // Sort keys to ensure chronological order
+    const sortedMinutes = Array.from(aggregated.keys()).sort()
+    data = sortedMinutes.map(m => ({
+      minute: m,
+      rpm: aggregated.get(m) || 0
+    }))
+  } else {
+    data = analytics.value.minute_usage.filter(u => `${u.provider}/${u.model}` === peakModel.value)
+  }
+
   return {
     tooltip: { trigger: 'axis' },
     grid: { top: 10, left: 40, right: 10, bottom: 20 },
     xAxis: { type: 'category', data: data.map(d => d.minute.split(' ')[1]), axisLabel: { show: false } },
-    yAxis: { 
+    yAxis: {
       type: 'value',
       axisLabel: { color: textColor.value },
       splitLine: { lineStyle: { color: axisColor.value } }
@@ -337,14 +357,32 @@ const rpmPeakOption = computed(() => {
 
 const tpmPeakOption = computed(() => {
   if (!analytics.value || !peakModel.value) return {}
-  const data = analytics.value.minute_usage.filter(u => u.model === peakModel.value)
+  
+  let data
+  if (peakModel.value === 'all') {
+    // Aggregate by minute across all models
+    const aggregated = new Map<string, number>()
+    analytics.value.minute_usage.forEach(u => {
+      const current = aggregated.get(u.minute) || 0
+      aggregated.set(u.minute, current + u.tpm)
+    })
+    
+    const sortedMinutes = Array.from(aggregated.keys()).sort()
+    data = sortedMinutes.map(m => ({
+      minute: m,
+      tpm: aggregated.get(m) || 0
+    }))
+  } else {
+    data = analytics.value.minute_usage.filter(u => `${u.provider}/${u.model}` === peakModel.value)
+  }
+
   return {
     tooltip: { trigger: 'axis' },
     grid: { top: 10, left: 60, right: 10, bottom: 20 },
     xAxis: { type: 'category', data: data.map(d => d.minute.split(' ')[1]), axisLabel: { show: false } },
-    yAxis: { 
-      type: 'value', 
-      axisLabel: { 
+    yAxis: {
+      type: 'value',
+      axisLabel: {
         formatter: (v: number) => v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : v,
         color: textColor.value
       },
@@ -365,12 +403,30 @@ const tpmPeakOption = computed(() => {
 
 const rpdPeakOption = computed(() => {
   if (!analytics.value || !peakModel.value) return {}
-  const data = analytics.value.model_trends.filter(u => u.model === peakModel.value)
+  
+  let data
+  if (peakModel.value === 'all') {
+    // Aggregate by date across all models
+    const aggregated = new Map<string, number>()
+    analytics.value.model_trends.forEach(u => {
+      const current = aggregated.get(u.date) || 0
+      aggregated.set(u.date, current + u.request_count)
+    })
+    
+    const sortedDates = Array.from(aggregated.keys()).sort()
+    data = sortedDates.map(d => ({
+      date: d,
+      request_count: aggregated.get(d) || 0
+    }))
+  } else {
+    data = analytics.value.model_trends.filter(u => `${u.provider}/${u.model}` === peakModel.value)
+  }
+
   return {
     tooltip: { trigger: 'axis' },
     grid: { top: 10, left: 40, right: 10, bottom: 20 },
     xAxis: { type: 'category', data: data.map(d => d.date), axisLabel: { show: false } },
-    yAxis: { 
+    yAxis: {
       type: 'value',
       axisLabel: { color: textColor.value },
       splitLine: { lineStyle: { color: axisColor.value } }

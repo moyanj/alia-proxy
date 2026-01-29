@@ -75,6 +75,20 @@ async def list_models():
                                 m_copy["id"] = f"{name}/{m['id']}"
                                 all_models.append(m_copy)
 
+    # 添加配置中的映射模型 (from settings.mapping)
+    for alias in settings.mapping.keys():
+        all_models.append(
+            {
+                "id": alias,
+                "object": "model",
+                "created": int(current_time),
+                "owned_by": "system-mapping",
+                "permission": [],
+                "root": alias,
+                "parent": None,
+            }
+        )
+
     return {"object": "list", "data": all_models}
 
 

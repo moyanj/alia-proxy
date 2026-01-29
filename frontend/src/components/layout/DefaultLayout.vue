@@ -56,7 +56,8 @@ import {
   ShieldCheck,
   Terminal,
   Sun,
-  Moon
+  Moon,
+  Hash
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -67,6 +68,7 @@ const navItems = [
   { name: '分析报告', path: '/analytics', icon: BarChart3 },
   { name: '请求日志', path: '/logs', icon: ListTodo },
   { name: '提供商配置', path: '/providers', icon: ShieldCheck },
+  { name: '模型映射', path: '/mappings', icon: Hash },
   { name: '演练场', path: '/playground', icon: Terminal },
 ]
 
