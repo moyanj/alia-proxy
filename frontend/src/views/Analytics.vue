@@ -107,6 +107,8 @@ import VChart from 'vue-echarts'
 import { LayoutDashboard, RefreshCw, Info } from 'lucide-vue-next'
 import { getAnalytics, type Analytics } from '@/api'
 
+import { useUIStore } from '@/stores/ui'
+
 // Register ECharts components
 use([
   CanvasRenderer,
@@ -121,6 +123,7 @@ use([
   MarkAreaComponent
 ])
 
+const ui = useUIStore()
 const analytics = ref<Analytics | null>(null)
 const days = ref(7)
 const refreshing = ref(false)
@@ -151,18 +154,40 @@ function refreshAll() {
   fetchAnalytics()
 }
 
+// Common chart styles based on theme
+const textColor = computed(() => ui.isDark ? '#e5e7eb' : '#374151') // gray-200 : gray-700
+const axisColor = computed(() => ui.isDark ? '#4b5563' : '#e5e7eb') // gray-600 : gray-200
+
 // Chart Options
 const requestTrendOption = computed(() => {
   if (!analytics.value) return {}
   const data = analytics.value.overall_trends
   return {
     tooltip: { trigger: 'axis' },
-    legend: { bottom: 0, data: ['请求数', '成功率'] },
+    legend: { bottom: 0, data: ['请求数', '成功率'], textStyle: { color: textColor.value } },
     grid: { top: 20, left: 40, right: 40, bottom: 40 },
-    xAxis: { type: 'category', data: data.map(d => d.date) },
+    xAxis: { 
+      type: 'category', 
+      data: data.map(d => d.date),
+      axisLabel: { color: textColor.value },
+      axisLine: { lineStyle: { color: axisColor.value } }
+    },
     yAxis: [
-      { type: 'value', name: '请求数' },
-      { type: 'value', name: '成功率', max: 100, axisLabel: { formatter: '{value}%' } }
+      { 
+        type: 'value', 
+        name: '请求数',
+        nameTextStyle: { color: textColor.value },
+        axisLabel: { color: textColor.value },
+        splitLine: { lineStyle: { color: axisColor.value } }
+      },
+      { 
+        type: 'value', 
+        name: '成功率', 
+        max: 100, 
+        axisLabel: { formatter: '{value}%', color: textColor.value },
+        nameTextStyle: { color: textColor.value },
+        splitLine: { show: false }
+      }
     ],
     series: [
       {
@@ -191,10 +216,19 @@ const errorTrendOption = computed(() => {
 
   return {
     tooltip: { trigger: 'axis' },
-    legend: { bottom: 0 },
+    legend: { bottom: 0, textStyle: { color: textColor.value } },
     grid: { top: 20, left: 40, right: 20, bottom: 40 },
-    xAxis: { type: 'category', data: dates },
-    yAxis: { type: 'value' },
+    xAxis: { 
+      type: 'category', 
+      data: dates,
+      axisLabel: { color: textColor.value },
+      axisLine: { lineStyle: { color: axisColor.value } }
+    },
+    yAxis: { 
+      type: 'value',
+      axisLabel: { color: textColor.value },
+      splitLine: { lineStyle: { color: axisColor.value } }
+    },
     series: errorCodes.map(code => ({
       name: `${code}`,
       type: 'bar',
@@ -215,10 +249,22 @@ const tokenUsageOption = computed(() => {
 
   return {
     tooltip: { trigger: 'axis' },
-    legend: { bottom: 0 },
+    legend: { bottom: 0, textStyle: { color: textColor.value } },
     grid: { top: 20, left: 60, right: 20, bottom: 40 },
-    xAxis: { type: 'category', data: dates },
-    yAxis: { type: 'value', axisLabel: { formatter: (v: number) => v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : v } },
+    xAxis: { 
+      type: 'category', 
+      data: dates,
+      axisLabel: { color: textColor.value },
+      axisLine: { lineStyle: { color: axisColor.value } }
+    },
+    yAxis: { 
+      type: 'value', 
+      axisLabel: { 
+        formatter: (v: number) => v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : v,
+        color: textColor.value
+      },
+      splitLine: { lineStyle: { color: axisColor.value } }
+    },
     series: models.map(m => ({
       name: m,
       type: 'line',
@@ -239,10 +285,19 @@ const modelRequestOption = computed(() => {
 
   return {
     tooltip: { trigger: 'axis' },
-    legend: { bottom: 0 },
+    legend: { bottom: 0, textStyle: { color: textColor.value } },
     grid: { top: 20, left: 40, right: 20, bottom: 40 },
-    xAxis: { type: 'category', data: dates },
-    yAxis: { type: 'value' },
+    xAxis: { 
+      type: 'category', 
+      data: dates,
+      axisLabel: { color: textColor.value },
+      axisLine: { lineStyle: { color: axisColor.value } }
+    },
+    yAxis: { 
+      type: 'value',
+      axisLabel: { color: textColor.value },
+      splitLine: { lineStyle: { color: axisColor.value } }
+    },
     series: models.map(m => ({
       name: m,
       type: 'line',
@@ -262,7 +317,11 @@ const rpmPeakOption = computed(() => {
     tooltip: { trigger: 'axis' },
     grid: { top: 10, left: 40, right: 10, bottom: 20 },
     xAxis: { type: 'category', data: data.map(d => d.minute.split(' ')[1]), axisLabel: { show: false } },
-    yAxis: { type: 'value' },
+    yAxis: { 
+      type: 'value',
+      axisLabel: { color: textColor.value },
+      splitLine: { lineStyle: { color: axisColor.value } }
+    },
     series: [{
       type: 'line',
       areaStyle: { opacity: 0.1 },
@@ -283,7 +342,14 @@ const tpmPeakOption = computed(() => {
     tooltip: { trigger: 'axis' },
     grid: { top: 10, left: 60, right: 10, bottom: 20 },
     xAxis: { type: 'category', data: data.map(d => d.minute.split(' ')[1]), axisLabel: { show: false } },
-    yAxis: { type: 'value', axisLabel: { formatter: (v: number) => v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : v } },
+    yAxis: { 
+      type: 'value', 
+      axisLabel: { 
+        formatter: (v: number) => v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : v,
+        color: textColor.value
+      },
+      splitLine: { lineStyle: { color: axisColor.value } }
+    },
     series: [{
       type: 'line',
       areaStyle: { opacity: 0.1 },
@@ -304,7 +370,11 @@ const rpdPeakOption = computed(() => {
     tooltip: { trigger: 'axis' },
     grid: { top: 10, left: 40, right: 10, bottom: 20 },
     xAxis: { type: 'category', data: data.map(d => d.date), axisLabel: { show: false } },
-    yAxis: { type: 'value' },
+    yAxis: { 
+      type: 'value',
+      axisLabel: { color: textColor.value },
+      splitLine: { lineStyle: { color: axisColor.value } }
+    },
     series: [{
       type: 'line',
       areaStyle: { opacity: 0.1 },

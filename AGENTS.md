@@ -1,11 +1,11 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-01-27T14:00:22Z
-**Commit:** 03b838d
+**Generated:** 2026-01-29T13:11:00Z
+**Commit:** current
 **Branch:** main
 
 ## OVERVIEW
-Unified AI API proxy built with FastAPI, supporting multiple providers (OpenAI, Anthropic, Ollama), with unified logging and media persistence.
+Unified AI API proxy built with FastAPI, supporting multiple providers (OpenAI, Anthropic, Ollama), with unified logging, media persistence, and a Vue.js web dashboard.
 
 ## STRUCTURE
 ```
@@ -17,6 +17,7 @@ Unified AI API proxy built with FastAPI, supporting multiple providers (OpenAI, 
 │   ├── models.py         # Tortoise-ORM database models
 │   ├── config.py         # Settings management (Pydantic)
 │   └── main.py           # Application entry point
+├── frontend/             # Vue.js Web Dashboard
 ├── data/                 # Persistent storage (SQLite DB, Media)
 ├── tests/                # Pytest suite
 ├── config.toml           # Main provider configuration
@@ -65,5 +66,5 @@ docker-compose up --build
 ```
 
 ## NOTES
-- Media files (images/audio) are saved to `data/media/` and served via `/media/...`.
+- Media files (images/audio) are saved to `data/media/` and served via `/api/media/...`.
 - Requests use `provider/model` format (e.g., `openai/gpt-4o`) in the `model` field.

@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col md:flex-row">
+  <div class="h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 flex flex-col md:flex-row">
     <!-- Sidebar / Nav -->
-    <nav class="w-full md:w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shrink-0">
-      <div class="p-6 flex items-center gap-3">
+    <nav class="w-full md:w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shrink-0 h-full overflow-y-auto">
+      <div class="p-6 flex items-center gap-3 sticky top-0 bg-white dark:bg-gray-800 z-10">
         <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">A</div>
         <h1 class="text-xl font-bold text-gray-900 dark:text-white">AI Proxy</h1>
       </div>
@@ -21,21 +21,21 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-auto">
+    <main class="flex-1 h-full overflow-hidden flex flex-col">
       <header
-        class="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 flex items-center justify-between sticky top-0 z-10">
+        class="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 flex items-center justify-between shrink-0">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ currentRouteName }}</h2>
         <div class="flex items-center gap-4">
-          <button @click="toggleDarkMode" class="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-            <component :is="isDark ? Sun : Moon" class="w-5 h-5" />
+          <button @click="ui.toggleTheme" class="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+            <component :is="ui.isDark ? Sun : Moon" class="w-5 h-5" />
           </button>
         </div>
       </header>
 
-      <div class="p-6">
+      <div class="flex-1 overflow-y-auto p-6">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
-            <component :is="Component" />
+            <component :is="Component" class="h-full" />
           </transition>
         </router-view>
       </div>
@@ -47,6 +47,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useUIStore } from '@/stores/ui'
 import GlobalUI from './GlobalUI.vue'
 import {
   LayoutDashboard,
@@ -59,7 +60,7 @@ import {
 } from 'lucide-vue-next'
 
 const route = useRoute()
-const isDark = ref(false)
+const ui = useUIStore()
 
 const navItems = [
   { name: '仪表盘', path: '/', icon: LayoutDashboard },
@@ -73,25 +74,8 @@ const currentRouteName = computed(() => {
   return navItems.find(item => item.path === route.path)?.name || ''
 })
 
-function toggleDarkMode() {
-  isDark.value = !isDark.value
-  if (isDark.value) {
-    document.documentElement.classList.add('dark')
-    localStorage.theme = 'dark'
-  } else {
-    document.documentElement.classList.remove('dark')
-    localStorage.theme = 'light'
-  }
-}
-
 onMounted(() => {
-  if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    isDark.value = true
-    document.documentElement.classList.add('dark')
-  } else {
-    isDark.value = false
-    document.documentElement.classList.remove('dark')
-  }
+  ui.initTheme()
 })
 </script>
 

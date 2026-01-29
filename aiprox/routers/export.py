@@ -84,7 +84,7 @@ async def export_logs(format: ExportFormat = Query(ExportFormat.JSONL)):
             # 兼容处理新模型
             prompt = log.content.prompt if log.content else ""
             response = log.content.response if log.content else ""
-            media_path = log.media[0].file_path if log.media else ""
+            media_paths = ",".join([m.file_path for m in log.media])
 
             writer.writerow(
                 [
@@ -98,7 +98,7 @@ async def export_logs(format: ExportFormat = Query(ExportFormat.JSONL)):
                     log.status_code,
                     log.latency,
                     log.ip_address,
-                    media_path,
+                    media_paths,
                     prompt,
                     response,
                 ]
@@ -114,24 +114,44 @@ async def export_logs(format: ExportFormat = Query(ExportFormat.JSONL)):
     elif format == "sharegpt":
         sharegpt_logs = []
         for log in chat_logs:
-            prompt = log.content.prompt if log.content else ""
+            prompt_str = log.content.prompt if log.content else ""
             response = log.content.response if log.content else ""
-            if prompt and response:
+            if prompt_str and response:
                 try:
-                    # 尝试解析原始 prompt 消息列表
-                    messages = eval(prompt)
+                    # 尝试解析原始 prompt 消息列表 (可能是 JSON 或 Python repr)
+                    try:
+                        messages = json.loads(prompt_str)
+                    except json.JSONDecodeError:
+                        messages = eval(prompt_str)
+
                     conversations = []
                     for m in messages:
                         role = "human" if m["role"] == "user" else "gpt"
-                        conversations.append({"from": role, "value": m["content"]})
+                        content = m["content"]
+                        # 处理多模态内容，将其转为文本描述
+                        if isinstance(content, list):
+                            text_parts = []
+                            for item in content:
+                                if item.get("type") == "text":
+                                    text_parts.append(item["text"])
+                                elif item.get("type") == "image_url":
+                                    # 如果是转存后的占位符
+                                    url_info = item["image_url"]
+                                    if isinstance(url_info, str):
+                                        text_parts.append(url_info)
+                                    else:
+                                        text_parts.append("[IMAGE]")
+                            content = "\n".join(text_parts)
+
+                        conversations.append({"from": role, "value": content})
                     conversations.append({"from": "gpt", "value": response})
                     sharegpt_logs.append({"conversations": conversations})
-                except:
+                except Exception:
                     # 解析失败则回退到简单的单轮对话
                     sharegpt_logs.append(
                         {
                             "conversations": [
-                                {"from": "human", "value": prompt},
+                                {"from": "human", "value": prompt_str},
                                 {"from": "gpt", "value": response},
                             ]
                         }
@@ -144,7 +164,9 @@ async def export_logs(format: ExportFormat = Query(ExportFormat.JSONL)):
                 headers={"Content-Disposition": "attachment; filename=export.jsonl"},
             )
 
-        output = "\n".join([json.dumps(log) for log in sharegpt_logs])
+        output = "\n".join(
+            [json.dumps(log, ensure_ascii=False) for log in sharegpt_logs]
+        )
         return StreamingResponse(
             iter([output]),
             media_type="application/x-jsonlines",
@@ -157,7 +179,7 @@ async def export_logs(format: ExportFormat = Query(ExportFormat.JSONL)):
         for log in chat_logs:
             prompt = log.content.prompt if log.content else ""
             response = log.content.response if log.content else ""
-            media_path = log.media[0].file_path if log.media else ""
+            media_paths = [m.file_path for m in log.media]
             jsonl_logs.append(
                 {
                     "id": log.id,
@@ -170,13 +192,13 @@ async def export_logs(format: ExportFormat = Query(ExportFormat.JSONL)):
                     "status_code": log.status_code,
                     "latency": log.latency,
                     "ip_address": log.ip_address,
-                    "media_path": media_path,
+                    "media_paths": media_paths,
                     "prompt": prompt,
                     "response": response,
                 }
             )
 
-        output = "\n".join([json.dumps(log) for log in jsonl_logs])
+        output = "\n".join([json.dumps(log, ensure_ascii=False) for log in jsonl_logs])
         return StreamingResponse(
             iter([output]),
             media_type="application/x-jsonlines",

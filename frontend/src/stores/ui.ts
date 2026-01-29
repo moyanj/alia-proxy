@@ -9,6 +9,7 @@ export interface Toast {
 
 export const useUIStore = defineStore('ui', () => {
   const toasts = ref<Toast[]>([])
+  const isDark = ref(false)
   const confirmModal = ref<{
     show: boolean
     title: string
@@ -18,6 +19,27 @@ export const useUIStore = defineStore('ui', () => {
   } | null>(null)
 
   let toastId = 0
+
+  function initTheme() {
+    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      isDark.value = true
+      document.documentElement.classList.add('dark')
+    } else {
+      isDark.value = false
+      document.documentElement.classList.remove('dark')
+    }
+  }
+
+  function toggleTheme() {
+    isDark.value = !isDark.value
+    if (isDark.value) {
+      document.documentElement.classList.add('dark')
+      localStorage.theme = 'dark'
+    } else {
+      document.documentElement.classList.remove('dark')
+      localStorage.theme = 'light'
+    }
+  }
 
   function showToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
     const id = ++toastId
@@ -45,5 +67,5 @@ export const useUIStore = defineStore('ui', () => {
     })
   }
 
-  return { toasts, confirmModal, showToast, confirm }
+  return { toasts, confirmModal, isDark, initTheme, toggleTheme, showToast, confirm }
 })

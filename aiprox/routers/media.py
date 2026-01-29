@@ -16,12 +16,9 @@ async def get_media(filename: str):
     """
     通过文件名获取本地存储的媒体文件。
     """
+    # 强制提取文件名，防止目录遍历攻击
+    filename = os.path.basename(filename)
     file_path = os.path.join(settings.media_dir, filename)
-    # 判断文件是否允许访问
-    if not os.path.isabs(file_path) or not os.path.commonprefix(
-        [file_path, settings.media_dir]
-    ):
-        raise HTTPException(status_code=403, detail="Access denied")
     # 检查文件是否存在
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Media not found")

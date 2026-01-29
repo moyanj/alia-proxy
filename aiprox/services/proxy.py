@@ -1,7 +1,7 @@
 import time
 import json
 import base64
-from typing import Any, Dict, Tuple, AsyncGenerator
+from typing import Any, Dict, Tuple, AsyncGenerator, List, Union
 from ..providers.base import (
     BaseProvider,
     ChatRequest,
@@ -37,12 +37,66 @@ class ProxyService:
         self.instance_name = instance_name
         self.request_ip = request_ip
 
+    async def _process_messages_for_log(
+        self, messages: List[Any]
+    ) -> Tuple[str, List[str]]:
+        """
+        处理消息列表，提取并转存 Base64 图片，返回脱敏后的 prompt 文本和媒体文件列表。
+        """
+        processed_messages = []
+        media_paths = []
+
+        for m in messages:
+            # 兼容对象和字典
+            role = getattr(m, "role", None) or m.get("role")
+            content = getattr(m, "content", None) or m.get("content")
+
+            if isinstance(content, list):
+                new_content = []
+                for item in content:
+                    if (
+                        isinstance(item, dict)
+                        and item.get("type") == "image_url"
+                        and "image_url" in item
+                    ):
+                        url = item["image_url"].get("url", "")
+                        if url.startswith("data:image"):
+                            try:
+                                # 提取 base64 数据
+                                header, data = url.split(",", 1)
+                                ext = header.split(";")[0].split("/")[1]
+                                image_bytes = base64.b64decode(data)
+                                # 转存
+                                filename = await save_media(image_bytes, ext)
+                                media_paths.append(filename)
+                                # 替换为占位符
+                                new_content.append(
+                                    {
+                                        "type": "image_url",
+                                        "image_url": f"[IMAGE: {filename}]",
+                                    }
+                                )
+                                continue
+                            except Exception:
+                                pass
+                    new_content.append(item)
+                processed_messages.append({"role": role, "content": new_content})
+            else:
+                processed_messages.append({"role": role, "content": content})
+
+        return json.dumps(processed_messages, ensure_ascii=False), media_paths
+
     async def chat(self, chat_request: ChatRequest) -> Dict[str, Any]:
         """
         处理非流式聊天请求。
         调用提供商 API，记录日志并返回响应结果。
         """
         start_time = time.perf_counter()
+        # 预处理请求，转存图片
+        prompt_json, media_paths = await self._process_messages_for_log(
+            chat_request.messages
+        )
+
         try:
             response = await self.provider.chat(chat_request)
             latency = time.perf_counter() - start_time
@@ -58,7 +112,7 @@ class ProxyService:
                 provider=self.instance_name,
                 endpoint="chat",
                 model=self.model,
-                prompt=str(chat_request.messages),
+                prompt=prompt_json,
                 response=resp_content,
                 prompt_tokens=response.usage.prompt_tokens,
                 completion_tokens=response.usage.completion_tokens,
@@ -68,6 +122,7 @@ class ProxyService:
                 ip_address=self.request_ip,
                 request_id=response.id,
                 is_streaming=False,
+                media_path=media_paths,
             )
             return response.model_dump(exclude_none=True)
         except Exception as e:
@@ -77,11 +132,12 @@ class ProxyService:
                 provider=self.instance_name,
                 endpoint="chat",
                 model=self.model,
-                prompt=str(chat_request.messages),
+                prompt=prompt_json,
                 error=str(e),
                 status_code=status_code,
                 latency=latency,
                 ip_address=self.request_ip,
+                media_path=media_paths,
             )
             raise
 
@@ -99,7 +155,7 @@ class ProxyService:
                 provider=self.instance_name,
                 endpoint="embeddings",
                 model=self.model,
-                prompt=str(request.input),
+                prompt=json.dumps(request.input, ensure_ascii=False),
                 response="[Embeddings Data]",
                 prompt_tokens=response.usage.prompt_tokens,
                 total_tokens=response.usage.total_tokens,
@@ -117,7 +173,7 @@ class ProxyService:
                 provider=self.instance_name,
                 endpoint="embeddings",
                 model=self.model,
-                prompt=str(request.input),
+                prompt=json.dumps(request.input, ensure_ascii=False),
                 error=str(e),
                 status_code=status_code,
                 latency=latency,
@@ -131,6 +187,11 @@ class ProxyService:
         逐块返回数据，并在流结束后将完整对话记录到日志中。
         """
         start_time = time.perf_counter()
+        # 预处理请求，转存图片
+        prompt_json, media_paths = await self._process_messages_for_log(
+            chat_request.messages
+        )
+
         full_content = ""
         prompt_tokens = 0
         completion_tokens = 0
@@ -165,11 +226,12 @@ class ProxyService:
                 provider=self.instance_name,
                 endpoint="chat",
                 model=self.model,
-                prompt=str(chat_request.messages),
+                prompt=prompt_json,
                 error=str(e),
                 status_code=status_code,
                 latency=time.perf_counter() - start_time,
                 ip_address=self.request_ip,
+                media_path=media_paths,
             )
             raise
 
@@ -179,7 +241,7 @@ class ProxyService:
             provider=self.instance_name,
             endpoint="chat",
             model=self.model,
-            prompt=str(chat_request.messages),
+            prompt=prompt_json,
             response=full_content,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
@@ -188,6 +250,7 @@ class ProxyService:
             latency=latency,
             ip_address=self.request_ip,
             is_streaming=True,
+            media_path=media_paths,
         )
 
     async def image_gen(self, prompt: str) -> Dict[str, Any]:
@@ -200,7 +263,7 @@ class ProxyService:
             response = await self.provider.image_gen(prompt, self.model)
             latency = time.perf_counter() - start_time
 
-            media_filename = ""
+            media_filenames = []
             for item in response.get("data", []):
                 if "b64_json" in item:
                     # 解码 Base64 并保存为本地文件
@@ -209,15 +272,18 @@ class ProxyService:
                     # 替换为内部 API URL
                     item["url"] = f"/api/media/{filename}"
                     del item["b64_json"]
-                    media_filename = filename
+                    media_filenames.append(filename)
+                elif "url" in item and item["url"].startswith("http"):
+                    # 如果是远程 URL，也可以考虑下载转存，但目前先保持原样或记录
+                    pass
 
             # 记录日志
             await log_request(
                 provider=self.instance_name,
                 endpoint="image",
                 model=self.model,
-                prompt=prompt,
-                media_path=media_filename,
+                prompt=json.dumps(prompt, ensure_ascii=False),
+                media_path=media_filenames,
                 status_code=200,
                 latency=latency,
                 ip_address=self.request_ip,
@@ -230,7 +296,7 @@ class ProxyService:
                 provider=self.instance_name,
                 endpoint="image",
                 model=self.model,
-                prompt=prompt,
+                prompt=json.dumps(prompt, ensure_ascii=False),
                 error=str(e),
                 status_code=status_code,
                 latency=latency,
@@ -253,7 +319,7 @@ class ProxyService:
                 provider=self.instance_name,
                 endpoint="audio",
                 model=self.model,
-                prompt=text,
+                prompt=json.dumps(text, ensure_ascii=False),
                 media_path=filename,
                 media_type="audio",
                 status_code=200,
@@ -268,7 +334,7 @@ class ProxyService:
                 provider=self.instance_name,
                 endpoint="audio",
                 model=self.model,
-                prompt=text,
+                prompt=json.dumps(text, ensure_ascii=False),
                 error=str(e),
                 status_code=status_code,
                 latency=latency,
@@ -281,12 +347,16 @@ class ProxyService:
         处理 Anthropic 原生消息请求。
         """
         start_time = time.perf_counter()
+        # 预处理请求内容中的图片
+        messages = body.get("messages", [])
+        prompt_json, media_paths = await self._process_messages_for_log(messages)
+
         # 确保模型字段正确
         body["model"] = self.model
 
         # 如果是流式请求
         if body.get("stream"):
-            return self.anthropic_chat_stream(body)
+            return self.anthropic_chat_stream(body, prompt_json, media_paths)
 
         # 否则是非流式
         from ..providers.anthropic import AnthropicProvider
@@ -306,7 +376,7 @@ class ProxyService:
                     provider=self.instance_name,
                     endpoint="anthropic/messages",
                     model=self.model,
-                    prompt=str(body.get("messages")),
+                    prompt=prompt_json,
                     response=content,
                     prompt_tokens=response.get("usage", {}).get("input_tokens", 0),
                     completion_tokens=response.get("usage", {}).get("output_tokens", 0),
@@ -317,6 +387,7 @@ class ProxyService:
                     ip_address=self.request_ip,
                     request_id=response.get("id"),
                     is_streaming=False,
+                    media_path=media_paths,
                 )
                 return response
             except Exception as e:
@@ -326,11 +397,12 @@ class ProxyService:
                     provider=self.instance_name,
                     endpoint="anthropic/messages",
                     model=self.model,
-                    prompt=str(body.get("messages")),
+                    prompt=prompt_json,
                     error=str(e),
                     status_code=status_code,
                     latency=latency,
                     ip_address=self.request_ip,
+                    media_path=media_paths,
                 )
                 raise
         else:
@@ -339,7 +411,7 @@ class ProxyService:
             )
 
     async def anthropic_chat_stream(
-        self, body: Dict[str, Any]
+        self, body: Dict[str, Any], prompt_json: str, media_paths: List[str]
     ) -> AsyncGenerator[str, None]:
         """
         处理 Anthropic 原生流式消息请求。
@@ -377,11 +449,12 @@ class ProxyService:
                 provider=self.instance_name,
                 endpoint="anthropic/messages",
                 model=self.model,
-                prompt=str(body.get("messages")),
+                prompt=prompt_json,
                 error=str(e),
                 status_code=status_code,
                 latency=time.perf_counter() - start_time,
                 ip_address=self.request_ip,
+                media_path=media_paths,
             )
             raise
 
@@ -390,7 +463,7 @@ class ProxyService:
             provider=self.instance_name,
             endpoint="anthropic/messages",
             model=self.model,
-            prompt=str(body.get("messages")),
+            prompt=prompt_json,
             response=full_content,
             prompt_tokens=input_tokens,
             completion_tokens=output_tokens,
@@ -399,4 +472,5 @@ class ProxyService:
             latency=time.perf_counter() - start_time,
             ip_address=self.request_ip,
             is_streaming=True,
+            media_path=media_paths,
         )

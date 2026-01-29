@@ -35,7 +35,14 @@ async def get_analytics(
     # 1. 总体统计 (总请求, 成功率, 平均耗时)
     total_count = await base_query.count()
     success_count = await base_query.filter(status_code__lt=400).count()
-    avg_latency = await base_query.annotate(avg_lat=Avg("latency")).values("avg_lat")
+
+    # 优化平均耗时查询，直接聚合
+    avg_latency_result = await base_query.annotate(avg_lat=Avg("latency")).values(
+        "avg_lat"
+    )
+    avg_latency_val = 0.0
+    if avg_latency_result and avg_latency_result[0].get("avg_lat") is not None:
+        avg_latency_val = float(avg_latency_result[0]["avg_lat"])
 
     # 2. 错误分布 (全局摘要)
     error_summary = (
@@ -100,9 +107,7 @@ async def get_analytics(
             "success_rate": (success_count / total_count * 100)
             if total_count > 0
             else 100,
-            "avg_latency": avg_latency[0]["avg_lat"]
-            if avg_latency and avg_latency[0]["avg_lat"]
-            else 0,
+            "avg_latency": avg_latency_val,
         },
         "errors": {str(item["status_code"]): item["count"] for item in error_summary},
         "error_trends": error_daily_stats,
@@ -131,7 +136,7 @@ async def get_logs(
 ):
     """
     获取请求日志列表，支持过滤和分页。
-    列表仅返回元数据，不包含大文本内容。
+    列表仅返回元数据及媒体信息，不包含大文本内容。
     """
     query = RequestLog.all()
     if provider:
@@ -143,7 +148,39 @@ async def get_logs(
     if status_code:
         query = query.filter(status_code=status_code)
 
-    return await query.order_by("-timestamp").limit(limit).offset(offset)
+    logs = (
+        await query.order_by("-timestamp")
+        .limit(limit)
+        .offset(offset)
+        .prefetch_related("media")
+    )
+
+    # 转换为字典以包含预取的媒体信息
+    result = []
+    for log in logs:
+        log_data = {
+            "id": log.id,
+            "request_id": log.request_id,
+            "timestamp": log.timestamp.isoformat(),
+            "date": log.date.isoformat(),
+            "provider": log.provider,
+            "endpoint": log.endpoint,
+            "model": log.model,
+            "prompt_tokens": log.prompt_tokens,
+            "completion_tokens": log.completion_tokens,
+            "total_tokens": log.total_tokens,
+            "status_code": log.status_code,
+            "latency": log.latency,
+            "is_streaming": log.is_streaming,
+            "ip_address": log.ip_address,
+            "metadata": log.metadata,
+            "media": [
+                {"file_path": m.file_path, "file_type": m.file_type} for m in log.media
+            ],
+        }
+        result.append(log_data)
+
+    return result
 
 
 @router.get("/api/logs/{log_id}")

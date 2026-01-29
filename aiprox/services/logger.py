@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Optional, List
+from typing import Optional, List, Union
 from ..models import RequestLog, RequestContent, MediaResource
 
 
@@ -14,7 +14,7 @@ async def log_request(
     total_tokens: int = 0,
     status_code: int = 200,
     latency: float = 0.0,
-    media_path: str = "",
+    media_path: Optional[Union[str, List[str]]] = "",
     error: str = "",
     ip_address: str = "",
     request_id: Optional[str] = None,
@@ -53,9 +53,10 @@ async def log_request(
 
     # 3. 如果有关联媒体资源，创建媒体记录
     if media_path:
-        # 如果是单个路径
-        await MediaResource.create(
-            log=log,
-            file_path=media_path,
-            file_type=media_type,
-        )
+        paths = [media_path] if isinstance(media_path, str) else media_path
+        for path in paths:
+            await MediaResource.create(
+                log=log,
+                file_path=path,
+                file_type=media_type,
+            )
