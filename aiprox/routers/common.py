@@ -157,9 +157,23 @@ async def get_log_detail(log_id: int):
         raise HTTPException(status_code=404, detail="Log not found")
 
     # 转换为字典并补充关联数据
-    data = dict(log)
-    data["timestamp"] = log.timestamp.isoformat()
-    data["date"] = log.date.isoformat()
+    data = {
+        "id": log.id,
+        "provider": log.provider,
+        "endpoint": log.endpoint,
+        "model": log.model,
+        "prompt_tokens": log.prompt_tokens,
+        "completion_tokens": log.completion_tokens,
+        "total_tokens": log.total_tokens,
+        "status_code": log.status_code,
+        "latency": log.latency,
+        "ip_address": log.ip_address,
+        "request_id": log.request_id,
+        "is_streaming": log.is_streaming,
+        "metadata": log.metadata,
+        "timestamp": log.timestamp.isoformat(),
+        "date": log.date.isoformat(),
+    }
 
     if log.content:
         data["content"] = {
@@ -246,6 +260,16 @@ async def get_stats():
         }
 
     return stats
+
+
+@router.get("/api/provider_types")
+async def get_provider_types():
+    """
+    获取所有已注册的提供商类型。
+    """
+    from ..providers.factory import ProviderFactory
+
+    return list(ProviderFactory._registry.keys())
 
 
 @router.get("/api/providers")
@@ -371,3 +395,17 @@ async def list_all_models():
             all_models[name] = {"error": str(e)}
 
     return all_models
+
+
+@router.get("/api/models/{provider}")
+async def list_provider_models(provider: str):
+    """
+    获取指定提供商支持的模型列表。
+    """
+    from ..providers.factory import ProviderFactory
+
+    try:
+        provider_instance = ProviderFactory.get_provider(provider)
+        return await provider_instance.list_models()
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))

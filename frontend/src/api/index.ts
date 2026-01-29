@@ -86,9 +86,25 @@ export const getLogDetail = (id: number) => api.get<Log>(`/api/logs/${id}`).then
 export const deleteLog = (id: number) => api.delete(`/api/logs/${id}`).then(res => res.data)
 export const clearLogs = (params: any) => api.delete('/api/logs', { params }).then(res => res.data)
 export const getProviders = () => api.get<Record<string, ProviderConfig>>('/api/providers').then(res => res.data)
+export const getProviderTypes = () => api.get<string[]>('/api/provider_types').then(res => res.data)
 export const getHealth = () => api.get<{ status: string, providers: Record<string, string> }>('/api/health').then(res => res.data)
 export const getConfig = () => api.get<any>('/api/config').then(res => res.data)
 export const updateConfig = (config: any) => api.post('/api/config', config).then(res => res.data)
-export const getAllModels = () => api.get<Record<string, any>>('/api/models').then(res => res.data)
+
+/**
+ * 获取所有模型
+ */
+export async function getAllModels() {
+  const res = await api.get<Record<string, any>>('/api/models')
+  return res.data
+}
+
+/**
+ * 获取特定提供商的模型
+ */
+export async function getModelsByProvider(provider: string) {
+  const res = await api.get<any[]>(`/api/models/${provider}`)
+  return res.data
+}
 
 export default api

@@ -106,6 +106,7 @@ class AnthropicProvider(BaseProvider):
         发送非流式聊天请求到 Anthropic。
         包含对系统消息、工具调用、停止序列等的处理。
         """
+        timeout = getattr(self.config, "timeout", 60.0)
         async with httpx.AsyncClient() as client:
             headers = {
                 "x-api-key": self.api_key,
@@ -169,7 +170,7 @@ class AnthropicProvider(BaseProvider):
                 f"{self.base_url}/messages",
                 headers=headers,
                 json=payload,
-                timeout=60.0,
+                timeout=timeout,
             )
             response.raise_for_status()
             data = response.json()
@@ -221,6 +222,7 @@ class AnthropicProvider(BaseProvider):
         """
         原生 Anthropic 消息接口。
         """
+        timeout = getattr(self.config, "timeout", 60.0)
         async with httpx.AsyncClient() as client:
             headers = {
                 "x-api-key": self.api_key,
@@ -231,7 +233,7 @@ class AnthropicProvider(BaseProvider):
                 f"{self.base_url}/messages",
                 headers=headers,
                 json=payload,
-                timeout=60.0,
+                timeout=timeout,
             )
             response.raise_for_status()
             return response.json()
@@ -240,6 +242,7 @@ class AnthropicProvider(BaseProvider):
         """
         原生 Anthropic 消息流接口。
         """
+        timeout = getattr(self.config, "timeout", 60.0)
         async with httpx.AsyncClient() as client:
             headers = {
                 "x-api-key": self.api_key,
@@ -252,7 +255,7 @@ class AnthropicProvider(BaseProvider):
                 f"{self.base_url}/messages",
                 headers=headers,
                 json=payload,
-                timeout=60.0,
+                timeout=timeout,
             ) as response:
                 response.raise_for_status()
                 async for line in response.aiter_lines():
@@ -266,6 +269,7 @@ class AnthropicProvider(BaseProvider):
         发送流式聊天请求到 Anthropic。
         实时将 Anthropic 的事件流转换为 OpenAI 的 data: 格式。
         """
+        timeout = getattr(self.config, "timeout", 60.0)
         async with httpx.AsyncClient() as client:
             headers = {
                 "x-api-key": self.api_key,
