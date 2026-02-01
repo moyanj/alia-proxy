@@ -1,233 +1,184 @@
 <template>
-  <div class="space-y-6">
-    <div class="flex justify-between items-center">
-      <h3 class="text-xl font-bold text-gray-900 dark:text-white">配置的提供商</h3>
+  <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <!-- Header with Actions -->
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white">配置的提供商</h3>
+        <p class="text-xs text-gray-500">管理您的 AI 模型提供商及其 API 密钥池。</p>
+      </div>
       <div class="flex gap-2">
-        <button @click="openAddModal"
-          class="text-sm bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+        <button @click="openAddModal" class="win-btn-primary flex items-center gap-2">
           <Plus class="w-4 h-4" /> 添加提供商
         </button>
-        <button @click="fetchAll"
-          class="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">刷新状态</button>
+        <button @click="fetchAll" class="px-4 py-1.5 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md text-sm font-medium hover:bg-black/10 transition-colors">
+          刷新
+        </button>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div v-for="(config, name) in providers" :key="name"
-        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden flex flex-col">
-
-        <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-start">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-              <Cloud class="w-6 h-6 text-gray-600 dark:text-gray-400" />
-            </div>
-            <div>
-              <h4 class="text-lg font-bold text-gray-900 dark:text-white">{{ name }}</h4>
-              <span
-                class="text-[10px] font-black px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 rounded-md uppercase tracking-widest border border-blue-500/10">{{
-                  config.type }}</span>
-            </div>
+    <!-- Provider List in Windows Settings Style -->
+    <div class="space-y-2">
+      <div v-for="(config, name) in providers" :key="name" 
+        class="win-card px-6 py-4 flex items-center justify-between win-card-hover group transition-all"
+      >
+        <div class="flex items-center gap-6">
+          <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 shrink-0">
+             <Cloud class="w-6 h-6" />
           </div>
-          <div class="flex flex-col items-end gap-2">
+          <div class="flex flex-col">
             <div class="flex items-center gap-2">
-              <div class="w-2 h-2 rounded-full animate-pulse"
-                :class="healthStatus[name] === 'healthy' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'"></div>
-              <span class="text-xs font-bold text-gray-500 dark:text-gray-400">{{ healthStatus[name] || 'Checking...' }}</span>
+              <span class="text-[15px] font-bold text-gray-900 dark:text-white">{{ name }}</span>
+              <span class="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-[10px] font-bold text-gray-500 uppercase tracking-tighter border border-black/5">
+                {{ config.type }}
+              </span>
             </div>
-            <button @click="openEditModal(name, config)"
-              class="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">编辑配置</button>
-          </div>
-        </div>
-
-        <div class="p-6 space-y-4 flex-1">
-          <div class="grid grid-cols-1 gap-4">
-            <div v-if="config.base_url" class="space-y-1.5">
-              <p class="text-[10px] uppercase font-black text-gray-400 tracking-wider">Base URL</p>
-              <p
-                class="text-sm font-mono truncate bg-gray-50 dark:bg-gray-900/50 p-2.5 rounded-lg border border-gray-100 dark:border-gray-700/50">
-                {{ config.base_url }}</p>
-            </div>
-            <div v-if="config.api_key" class="space-y-1.5">
-              <p class="text-[10px] uppercase font-black text-gray-400 tracking-wider">API Key</p>
-              <p
-                class="text-sm font-mono bg-gray-50 dark:bg-gray-900/50 p-2.5 rounded-lg border border-gray-100 dark:border-gray-700/50 break-all">
-                {{ Array.isArray(config.api_key) ? config.api_key.join(', ') : config.api_key }}
-              </p>
-            </div>
-            <div v-if="config.timeout" class="space-y-1.5">
-              <p class="text-[10px] uppercase font-black text-gray-400 tracking-wider">Timeout</p>
-              <p
-                class="text-sm font-mono bg-gray-50 dark:bg-gray-900/50 p-2.5 rounded-lg border border-gray-100 dark:border-gray-700/50">
-                {{ config.timeout }}s</p>
+            <div class="flex items-center gap-3 mt-1">
+               <div class="flex items-center gap-1.5">
+                  <div class="w-1.5 h-1.5 rounded-full" :class="healthStatus[name] === 'healthy' ? 'bg-green-500' : 'bg-red-500'"></div>
+                  <span class="text-[11px] font-bold uppercase tracking-tight" :class="healthStatus[name] === 'healthy' ? 'text-green-600' : 'text-red-600'">
+                    {{ healthStatus[name] === 'healthy' ? 'Healthy' : (healthStatus[name] || 'Unknown') }}
+                  </span>
+               </div>
+               <span class="text-[11px] text-gray-400 font-medium truncate max-w-[200px]">{{ config.base_url || 'Default Endpoint' }}</span>
             </div>
           </div>
         </div>
 
-        <div class="pb-6 space-y-3 px-6">
-          <p class="text-[10px] uppercase font-black text-gray-400 tracking-wider flex justify-between items-center">
-            支持的模型
-            <button @click="fetchModelsForProvider(name)" class="text-blue-500 hover:underline">查看全部</button>
-          </p>
-          <div class="flex flex-wrap gap-2">
-            <span v-for="m in (models[name] || []).slice(0, 5)" :key="(m as any).id"
-              class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 text-[10px] rounded-md font-bold border border-gray-200/50 dark:border-gray-600/30">
-              {{ (m as any).id || m }}
-            </span>
-            <span v-if="(models[name]?.length || 0) > 5" class="px-2.5 py-1 text-gray-400 text-[10px] font-bold">
-              +{{ (models[name]?.length || 0) - 5 }} more
-            </span>
-            <span v-if="!models[name]" class="text-xs text-gray-400 italic">点击刷新获取列表</span>
-          </div>
-        </div>
+        <div class="flex items-center gap-4">
+           <div class="flex -space-x-2 overflow-hidden mr-4">
+               <div v-for="(m, idx) in (models[name] || []).slice(0, 3)" :key="typeof m === 'string' ? m : m.id || idx" class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-[#2d2d2d] bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                  <span class="text-[8px] font-bold text-gray-500 uppercase truncate px-0.5">{{ (typeof m === 'string' ? m : m.id || '?').split('-')[0] }}</span>
+               </div>
+              <div v-if="(models[name]?.length || 0) > 3" class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-[#2d2d2d] bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
+                 <span class="text-[8px] font-bold text-gray-500">+{{ (models[name]?.length || 0) - 3 }}</span>
+              </div>
+           </div>
 
-        <div
-          class="p-4 px-6 bg-gray-50/50 dark:bg-gray-900/30 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center mt-auto">
-          <button @click="testProvider(name)"
-            class="text-xs font-black text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors uppercase tracking-widest">测试连接</button>
-          <button @click="deleteProvider(name)"
-            class="text-xs font-black text-red-500 hover:text-red-400 transition-colors uppercase tracking-widest">删除</button>
+            <div class="flex items-center gap-1">
+               <button @click="fetchModelsForProvider(name)" class="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-md text-gray-500" title="查看模型">
+                  <LayoutGrid class="w-4 h-4" />
+               </button>
+               <button @click="openEditModal(name, config)" class="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-md text-gray-500" title="编辑">
+                  <Settings class="w-4 h-4" />
+               </button>
+               <button @click="deleteProvider(name)" class="p-2 hover:bg-red-500/10 hover:text-red-500 rounded-md transition-colors" title="删除">
+                  <Trash2 class="w-4 h-4" />
+               </button>
+            </div>
         </div>
+      </div>
+
+      <div v-if="Object.keys(providers).length === 0" class="py-24 win-card flex flex-col items-center justify-center text-gray-400 border-dashed">
+         <CloudOff class="w-12 h-12 mb-4 opacity-20" />
+         <p class="text-sm font-bold uppercase tracking-widest">未配置提供商</p>
+         <button @click="openAddModal" class="mt-4 text-blue-600 dark:text-blue-400 font-bold hover:underline">点击立即添加</button>
       </div>
     </div>
 
-    <!-- Detail Models Modal -->
-    <div v-if="showModelsModal"
-      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div
-        class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div
-          class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/20">
-          <div class="flex-1">
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ activeModelsProvider }} 支持的模型</h3>
-            <div class="mt-3 relative">
-              <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input v-model="modelSearchQuery" type="text" placeholder="搜索模型名称..."
-                class="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl pl-9 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" />
-            </div>
+    <!-- Models Dialog -->
+    <div v-if="showModelsModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+       <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showModelsModal = false"></div>
+       <div class="win-card w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col overflow-hidden relative z-10">
+          <header class="p-6 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
+             <div>
+                <h4 class="text-lg font-bold">{{ activeModelsProvider }} 模型列表</h4>
+                <p class="text-xs text-gray-500">此提供商支持的所有模型。</p>
+             </div>
+             <button @click="showModelsModal = false" class="p-2 hover:bg-black/5 rounded-full transition-colors">
+                <X class="w-5 h-5" />
+             </button>
+          </header>
+          <div class="p-4 bg-black/[0.01]">
+             <div class="relative group">
+                <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500" />
+                <input v-model="modelSearchQuery" type="text" placeholder="搜索模型名称..."
+                  class="w-full bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/50" />
+             </div>
           </div>
-          <button @click="showModelsModal = false"
-            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-500 ml-4">
-            <X class="w-6 h-6" />
-          </button>
-        </div>
-        <div class="p-4 overflow-y-auto max-h-[60vh] bg-gray-50/30 dark:bg-black/10 custom-scrollbar">
-          <div v-if="filteredModels.length > 0" class="grid grid-cols-1 gap-2">
-            <div v-for="m in filteredModels" :key="(m as any).id || m"
-              class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:border-blue-500/50 transition-colors group">
-              <span class="text-sm font-mono text-gray-700 dark:text-gray-300">{{ (m as any).id || m }}</span>
-              <div class="flex items-center gap-2">
-                <span v-if="(m as any).owned_by"
-                  class="text-[10px] bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-500 uppercase font-bold">{{
-                    (m as any).owned_by }}</span>
-                <button @click="copyToClipboard((m as any).id || m)"
-                  class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-blue-500 transition-all">
-                  <Copy class="w-4 h-4" />
+          <div class="flex-1 overflow-y-auto max-h-[400px] p-4 custom-scrollbar space-y-2">
+             <div v-for="m in filteredModels" :key="m" class="flex items-center justify-between p-3 rounded-lg bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 group">
+                <span class="text-sm font-mono font-medium">{{ m }}</span>
+                <button @click="copyToClipboard(m)" class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-blue-500/10 text-blue-500 rounded transition-all">
+                   <Copy class="w-3.5 h-3.5" />
                 </button>
-              </div>
-            </div>
+             </div>
+             <div v-if="filteredModels.length === 0" class="py-12 text-center text-gray-400 italic text-sm">
+                未找到匹配模型
+             </div>
           </div>
-          <div v-else-if="models[activeModelsProvider]?.error" class="p-8 text-center">
-            <AlertCircle class="w-12 h-12 text-red-500 mx-auto mb-3 opacity-50" />
-            <p class="text-sm text-red-500 font-medium">{{ models[activeModelsProvider].error }}</p>
-          </div>
-          <div v-else class="p-12 text-center">
-            <div
-              class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search class="w-8 h-8 text-gray-300" />
-            </div>
-            <p class="text-gray-400 italic">未找到匹配的模型</p>
-          </div>
-        </div>
-        <div
-          class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/20 flex justify-end">
-          <button @click="showModelsModal = false"
-            class="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-sm font-bold">关闭</button>
-        </div>
-      </div>
+          <footer class="p-4 border-t border-black/5 bg-black/[0.01] flex justify-end">
+             <button @click="showModelsModal = false" class="px-6 py-1.5 bg-black/5 hover:bg-black/10 rounded-md text-sm font-bold transition-colors">
+                关闭
+             </button>
+          </footer>
+       </div>
     </div>
 
-    <!-- Edit/Add Modal -->
-    <div v-if="editingProvider"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div
-        class="bg-white dark:bg-gray-800 w-full max-w-3xl rounded-lg shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 border border-white/10">
-        <div
-          class="p-5 px-8 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/20">
-          <div>
-            <h3 class="text-xl font-black text-gray-900 dark:text-white tracking-tight">{{ isAdding ? '新增提供商' : '编辑配置'
-              }}
-            </h3>
-            <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">{{ isAdding ? 'Create new '
-              : `Instance: ${editingProvider}` }}</p>
-          </div>
-          <button @click="editingProvider = null"
-            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all hover:rotate-90">
-            <X class="w-5 h-5 text-gray-400" />
-          </button>
-        </div>
+    <!-- Edit/Add Modal (Full Dialog Style) -->
+    <div v-if="editingProvider" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+       <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="editingProvider = null"></div>
+       <div class="win-card w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col overflow-hidden relative z-10">
+          <header class="p-6 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
+             <h4 class="text-lg font-bold">{{ isAdding ? '添加新提供商' : `编辑 ${editingProvider}` }}</h4>
+             <button @click="editingProvider = null" class="p-2 hover:bg-black/5 rounded-full transition-colors">
+                <X class="w-5 h-5" />
+             </button>
+          </header>
 
-        <div class="p-8 py-6 space-y-6 overflow-y-auto max-h-[80vh] custom-scrollbar">
-          <!-- Top Row: ID, Type, Timeout -->
-          <div class="grid grid-cols-12 gap-5">
-            <div class="col-span-4 space-y-1.5">
-              <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">提供商标识</label>
-              <input v-model="editForm.name" :disabled="!isAdding" type="text" placeholder="标识符"
-                class="w-full bg-gray-50 dark:bg-gray-900/50 border-2 border-transparent focus:border-blue-500/50 rounded-lg px-4 py-2.5 text-sm outline-none transition-all font-bold disabled:opacity-50" />
-            </div>
-            <div class="col-span-4 space-y-1.5">
-              <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">类型</label>
-              <div class="relative">
-                <select v-model="editForm.type"
-                  class="w-full appearance-none bg-gray-50 dark:bg-gray-900/50 border-2 border-transparent focus:border-blue-500/50 rounded-lg px-4 py-2.5 text-sm outline-none transition-all font-bold cursor-pointer capitalize">
-                  <option v-for="t in providerTypes" :key="t" :value="t">{{ t }}</option>
-                </select>
-                <ChevronDown
-                  class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
-              </div>
-            </div>
-            <div class="col-span-4 space-y-1.5">
-              <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">超时 (秒)</label>
-              <input v-model.number="editForm.timeout" type="number" step="0.5"
-                class="w-full bg-gray-50 dark:bg-gray-900/50 border-2 border-transparent focus:border-blue-500/50 rounded-lg px-4 py-2.5 text-sm outline-none transition-all font-bold text-center" />
-            </div>
-          </div>
+          <div class="p-8 overflow-y-auto max-h-[70vh] custom-scrollbar space-y-6">
+             <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-1.5">
+                   <label class="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">提供商标识 (ID)</label>
+                   <input v-model="editForm.name" :disabled="!isAdding" type="text" placeholder="openai-primary"
+                     class="w-full bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50" />
+                </div>
+                <div class="space-y-1.5">
+                   <label class="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">接口类型</label>
+                   <div class="relative">
+                      <select v-model="editForm.type"
+                        class="w-full bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none capitalize">
+                        <option v-for="t in providerTypes" :key="t" :value="t">{{ t }}</option>
+                      </select>
+                      <ChevronDown class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                   </div>
+                </div>
+             </div>
 
-          <!-- Middle Row: Base URL & Extra Config -->
-          <div class="grid grid-cols-12 gap-5">
-            <div class="col-span-7 space-y-1.5">
-              <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">基础地址 (Base
-                URL)</label>
-              <input v-model="editForm.base_url" type="text" placeholder="https://api.openai.com/v1"
-                class="w-full bg-gray-50 dark:bg-gray-900/50 border-2 border-transparent focus:border-blue-500/50 rounded-lg px-4 py-2.5 text-sm outline-none transition-all font-mono" />
-            </div>
-            <div class="col-span-5 space-y-1.5">
-              <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">额外 JSON 配置</label>
-              <input v-model="editForm.extra" placeholder='{"proxy": "..."}'
-                class="w-full bg-gray-50 dark:bg-gray-900/50 border-2 border-transparent focus:border-blue-500/50 rounded-lg px-4 py-2.5 text-sm outline-none transition-all font-mono" />
-            </div>
+             <div class="space-y-1.5">
+                <label class="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">基础地址 (Base URL)</label>
+                <input v-model="editForm.base_url" type="text" placeholder="https://api.openai.com/v1"
+                  class="w-full bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 font-mono" />
+             </div>
+
+             <div class="space-y-1.5">
+                <label class="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">API Key 池 (逗号分隔)</label>
+                <textarea v-model="editForm.api_key" placeholder="sk-..., sk-..."
+                  class="w-full bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md px-4 py-3 text-xs outline-none focus:ring-2 focus:ring-blue-500/50 font-mono min-h-[100px] resize-none"></textarea>
+             </div>
+
+             <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-1.5">
+                   <label class="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">超时设置 (秒)</label>
+                   <input v-model.number="editForm.timeout" type="number"
+                     class="w-full bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/50" />
+                </div>
+                <div class="space-y-1.5">
+                   <label class="text-[11px] font-bold text-gray-500 uppercase tracking-widest ml-1">额外配置 (JSON)</label>
+                   <input v-model="editForm.extra" placeholder='{"proxy": "http://..."}'
+                     class="w-full bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 font-mono" />
+                </div>
+             </div>
           </div>
 
-          <!-- Bottom: API Keys (Full Width) -->
-          <div class="space-y-2.5 p-4 bg-blue-500/5 rounded-lg border border-blue-500/10">
-            <div class="flex justify-between items-center">
-              <label class="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] ml-1">API Key 池</label>
-              <span class="text-[9px] text-blue-500/60 font-bold">支持逗号分隔，后端将自动轮换</span>
-            </div>
-            <textarea v-model="editForm.api_key" placeholder="sk-..., sk-..."
-              class="w-full bg-white dark:bg-gray-900 border-2 border-transparent focus:border-blue-500/50 rounded-lg px-5 py-3 text-xs outline-none min-h-[90px] font-mono transition-all resize-none shadow-inner"></textarea>
-          </div>
-        </div>
-
-        <div
-          class="p-6 px-8 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/20 flex justify-end items-center gap-8">
-          <button @click="editingProvider = null"
-            class="text-xs font-bold text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors uppercase tracking-widest">Discard</button>
-          <button @click="saveProvider"
-            class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg text-sm font-black transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-blue-500/20">
-            保存配置
-          </button>
-        </div>
-      </div>
+          <footer class="p-6 border-t border-black/5 bg-black/[0.01] flex justify-end gap-3">
+             <button @click="editingProvider = null" class="px-6 py-2 bg-black/5 hover:bg-black/10 rounded-md text-sm font-bold transition-colors">
+                取消
+             </button>
+             <button @click="saveProvider" class="win-btn-primary px-8">
+                保存配置
+             </button>
+          </footer>
+       </div>
     </div>
   </div>
 </template>
@@ -243,7 +194,10 @@ import {
   updateConfig,
   type ProviderConfig
 } from '@/api'
-import { Cloud, Plus, X, ChevronDown, Copy, AlertCircle, Search } from 'lucide-vue-next'
+import { 
+   Cloud, Plus, X, ChevronDown, Copy, AlertCircle, 
+   Search, LayoutGrid, Settings, Trash2, CloudOff 
+} from 'lucide-vue-next'
 
 const ui = useUIStore()
 const providers = ref<Record<string, ProviderConfig>>({})
@@ -260,8 +214,7 @@ const modelSearchQuery = ref('')
 const filteredModels = computed(() => {
   const list = models.value[activeModelsProvider.value] || []
   if (Array.isArray(list)) {
-    return list.filter(m => {
-      const id = (m as any).id || m
+    return list.map(m => m.id || m).filter(id => {
       return String(id).toLowerCase().includes(modelSearchQuery.value.toLowerCase())
     })
   }
@@ -285,10 +238,10 @@ async function fetchAll() {
       getAllModels(),
       getProviderTypes()
     ])
-    providers.value = configData.providers
-    healthStatus.value = healthData.providers
-    models.value = modelsData
-    providerTypes.value = typesData
+    providers.value = configData.providers || {}
+    healthStatus.value = healthData.providers || {}
+    models.value = modelsData || {}
+    providerTypes.value = typesData || []
   } catch (err) {
     console.error('Failed to fetch providers info:', err)
   }
@@ -311,7 +264,6 @@ function openEditModal(name: string, config: any) {
   editForm.type = config.type
   editForm.base_url = config.base_url || ''
 
-  // 处理 API Key，如果是数组则转为逗号分隔
   if (Array.isArray(config.api_key)) {
     editForm.api_key = config.api_key.join(', ')
   } else {
@@ -320,9 +272,8 @@ function openEditModal(name: string, config: any) {
 
   editForm.timeout = config.timeout || 60.0
 
-  // 提取额外配置
   const { type, base_url, api_key, timeout, ...rest } = config
-  editForm.extra = Object.keys(rest).length > 0 ? JSON.stringify(rest, null, 2) : ''
+  editForm.extra = Object.keys(rest).length > 0 ? JSON.stringify(rest) : ''
 
   editingProvider.value = name
 }
@@ -333,7 +284,6 @@ async function saveProvider() {
   const config = await getConfig()
   if (!config.providers) config.providers = {}
 
-  // 处理 API Key，支持逗号分隔
   let apiKey: string | string[] | undefined = editForm.api_key || undefined
   if (apiKey && apiKey.includes(',')) {
     apiKey = apiKey.split(',').map(k => k.trim()).filter(k => k)
@@ -346,7 +296,6 @@ async function saveProvider() {
     timeout: editForm.timeout
   }
 
-  // 合并额外配置
   if (editForm.extra) {
     try {
       const extraData = JSON.parse(editForm.extra)
@@ -393,20 +342,6 @@ function copyToClipboard(text: string) {
   ui.showToast('已复制到剪贴板', 'success')
 }
 
-async function testProvider(name: string) {
-  try {
-    const health = await getHealth()
-    healthStatus.value = health.providers
-    if (healthStatus.value[name] === 'healthy') {
-      ui.showToast(`${name} 连接成功！`, 'success')
-    } else {
-      ui.showToast(`${name} 连接失败: ${healthStatus.value[name]}`, 'error')
-    }
-  } catch (err) {
-    ui.showToast('测试过程出错', 'error')
-  }
-}
-
 onMounted(() => {
   fetchAll()
 })
@@ -414,19 +349,16 @@ onMounted(() => {
 
 <style scoped>
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
-
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
-
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.3);
+  background: rgba(0, 0, 0, 0.05);
   border-radius: 10px;
 }
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.5);
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
 }
 </style>

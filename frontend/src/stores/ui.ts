@@ -45,8 +45,12 @@ export const useUIStore = defineStore('ui', () => {
     const id = ++toastId
     toasts.value.push({ id, message, type })
     setTimeout(() => {
-      toasts.value = toasts.value.filter(t => t.id !== id)
+      removeToast(id)
     }, 3000)
+  }
+
+  function removeToast(id: number) {
+    toasts.value = toasts.value.filter(t => t.id !== id)
   }
 
   function confirm(title: string, message: string): Promise<boolean> {
@@ -67,5 +71,5 @@ export const useUIStore = defineStore('ui', () => {
     })
   }
 
-  return { toasts, confirmModal, isDark, initTheme, toggleTheme, showToast, confirm }
+  return { toasts, confirmModal, isDark, initTheme, toggleTheme, showToast, removeToast, confirm }
 })

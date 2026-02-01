@@ -1,13 +1,21 @@
 @import "tailwindcss";
 
+@theme {
+  --color-win-bg: light-dark(#f3f3f3, #202020);
+  --color-win-card-bg: light-dark(#ffffff, #2d2d2d);
+  --color-win-border: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.08));
+  --color-win-accent: #0067c0;
+  --color-win-accent-secondary: #005fb8;
+}
+
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Segoe UI Variable", "Segoe UI", Inter, system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: var(--color-win-bg);
+  color: light-dark(#1a1a1a, #ffffff);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -17,21 +25,50 @@
 
 body {
   margin: 0;
-  min-width: 320px;
   min-height: 100vh;
+  background-color: var(--color-win-bg);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
+/* Mica-like effect */
+.win-mica {
+  background-color: light-dark(rgba(243, 243, 243, 0.8), rgba(32, 32, 32, 0.8));
+  backdrop-filter: blur(20px) saturate(180%);
+}
+
+.win-card {
+  background-color: var(--color-win-card-bg);
+  border: 1px solid var(--color-win-border);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.win-card-hover:hover {
+  background-color: light-dark(rgba(0, 0, 0, 0.02), rgba(255, 255, 255, 0.02));
+}
+
+.win-btn-primary {
+  background-color: var(--color-win-accent);
+  color: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 14px;
+  transition: all 0.1s;
+}
+
+.win-btn-primary:hover {
+  background-color: var(--color-win-accent-secondary);
+}
+
+.win-btn-primary:active {
+  transform: scale(0.98);
 }
 
 /* Global Scrollbar Styling */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -39,29 +76,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1; /* slate-300 */
+  background: light-dark(rgba(0,0,0,0.2), rgba(255,255,255,0.2));
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8; /* slate-400 */
-}
-
-/* Dark Mode Scrollbar */
-.dark ::-webkit-scrollbar-thumb {
-  background: #374151; /* gray-700 */
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #4b5563; /* gray-600 */
-}
-
-/* Firefox Scrollbar */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
-}
-
-.dark * {
-  scrollbar-color: #374151 transparent;
+  background: light-dark(rgba(0,0,0,0.3), rgba(255,255,255,0.3));
 }

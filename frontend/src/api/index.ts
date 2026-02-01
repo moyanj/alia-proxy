@@ -64,6 +64,18 @@ export interface Analytics {
     rpm: number
     tpm: number
   }>
+  provider_trends: Array<{
+    date: string
+    provider: string
+    total: number
+    success: number
+    avg_latency: number
+  }>
+  hourly_trends: Array<{
+    hour: string
+    count: number
+  }>
+  latency_distribution: Record<string, number>
 }
 
 export interface Stats {

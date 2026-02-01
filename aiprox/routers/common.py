@@ -102,6 +102,38 @@ async def get_analytics(
         .values("minute", "provider", "model", "rpm", "tpm")
     )
 
+    # 5. Provider 趋势 (按天聚合)
+    provider_daily_stats = (
+        await base_query.group_by("date", "provider")
+        .annotate(
+            total=Count("id"),
+            success=RawSQL("SUM(CASE WHEN status_code < 400 THEN 1 ELSE 0 END)"),
+            avg_latency=Avg("latency"),
+        )
+        .values("date", "provider", "total", "success", "avg_latency")
+    )
+
+    # 6. 按小时聚合
+    hourly_stats = (
+        await base_query.annotate(hour=RawSQL("strftime('%H', timestamp)"))
+        .group_by("hour")
+        .annotate(count=Count("id"))
+        .values("hour", "count")
+    )
+
+    # 7. 延迟分布
+    latency_bins = {
+        "0-0.5s": (0, 0.5),
+        "0.5-1s": (0.5, 1),
+        "1-2s": (2, 5),
+        "2-5s": (2, 5),
+        "5s+": (5, 9999),
+    }
+    latency_distribution = {}
+    for name, (lower, upper) in latency_bins.items():
+        count = await base_query.filter(latency__gte=lower, latency__lt=upper).count()
+        latency_distribution[name] = count
+
     return {
         "summary": {
             "total_requests": total_count,
@@ -115,6 +147,9 @@ async def get_analytics(
         "overall_trends": overall_daily_stats,
         "model_trends": model_daily_stats,
         "minute_usage": minute_usage,
+        "provider_trends": provider_daily_stats,
+        "hourly_trends": hourly_stats,
+        "latency_distribution": latency_distribution,
     }
 
 
