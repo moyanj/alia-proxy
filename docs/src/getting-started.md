@@ -14,6 +14,27 @@
 
 这是最简单、最快捷的启动方式，适用于所有操作系统。前后端已合并为单一容器。
 
+1. **配置提供商**：
+   ```bash
+   cp config.example.toml config.toml
+   # 编辑 config.toml 添加 API 密钥
+   ```
+
+2. **配置环境变量**（可选）：
+   ```bash
+   cp .env.example .env
+   # 编辑 .env 自定义数据库、调试模式等
+   ```
+
+3. **启动服务**：
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **访问应用**：
+   - **Web 仪表盘**: http://localhost:8000
+   - **API 服务**: http://localhost:8000/v1/...
+
 ### 1. 克隆项目
 
 ```bash
