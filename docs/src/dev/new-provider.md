@@ -30,22 +30,27 @@ class MyNewProvider(BaseProvider):
 
 ## 2. 注册 Provider
 
-打开 `aiprox/providers/factory.py`，在 `ProviderFactory` 类中注册您的新类。
+`aiprox` 使用**装饰器模式**动态注册 Provider，无需修改 `factory.py` 的核心逻辑。
+
+在你的 Provider 文件末尾添加注册代码：
 
 ```python
+from .factory import ProviderFactory
+
+# 动态注册 Provider
+@ProviderFactory.register("my-new-type")
+class MyNewProvider(BaseProvider):
+    # ... 你的实现
+```
+
+或者手动注册：
+
+```python
+from .factory import ProviderFactory
 from .myprovider import MyNewProvider
 
-class ProviderFactory:
-    # ...
-    
-    def _create_provider(self, config: ProviderConfig) -> BaseProvider:
-        if config.type == "openai":
-            return OpenAIProvider(config)
-        elif config.type == "anthropic":
-            return AnthropicProvider(config)
-        elif config.type == "my-new-type":  # 添加这一行
-            return MyNewProvider(config)
-        # ...
+# 手动注册
+ProviderFactory._registry["my-new-type"] = MyNewProvider
 ```
 
 ## 3. 配置与使用

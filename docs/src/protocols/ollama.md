@@ -4,7 +4,12 @@
 
 ## 原理
 
-`aiprox` 并没有为 Ollama 编写单独的 Provider 类，而是直接复用 `OpenAIProvider`。通过配置 `base_url` 指向 Ollama 的本地服务端口（默认 `11434`），`aiprox` 就可以像调用 OpenAI 一样调用本地模型。
+`aiprox` 为 Ollama 提供了独立的 `OllamaProvider` 类，但它继承自 `OpenAIProvider`，复用了大部分核心逻辑。`OllamaProvider` 主要做了以下适配：
+
+- 默认 `base_url` 指向 `http://localhost:11434/v1`
+- 自动设置默认的 `api_key`（Ollama 不需要真实 Key）
+
+你也可以直接使用 `type = "openai"` 配置 Ollama，效果相同。
 
 ## 配置指南
 
@@ -24,9 +29,9 @@ ollama run llama3
 
 ```toml
 [providers.ollama-local]
-type = "openai"  # 注意：这里使用 "openai" 类型，因为协议是兼容的
-base_url = "http://localhost:11434/v1" # 指向 Ollama 的 OpenAI 兼容端点
-api_key = "ollama" # Ollama 不需要真实的 Key，但为了通过校验，可以填任意非空字符串
+type = "ollama"  # 推荐使用 "ollama" 类型，也可以使用 "openai"
+base_url = "http://localhost:11434/v1" # 指向 Ollama 的本地服务端口
+api_key = "ollama" # Ollama 不需要真实的 Key，填任意非空字符串即可
 ```
 
 ## 使用方法
