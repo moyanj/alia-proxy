@@ -1,6 +1,6 @@
 # 语音合成 (TTS)
 
-`aiprox` 支持 OpenAI 的文本转语音 (Text-to-Speech, TTS) 接口 (`/v1/audio/speech`)，同样集成了自动持久化功能，使得生成的音频文件可以被轻松管理和回放。
+`alia_proxy` 支持 OpenAI 的文本转语音 (Text-to-Speech, TTS) 接口 (`/v1/audio/speech`)，同样集成了自动持久化功能，使得生成的音频文件可以被轻松管理和回放。
 
 ## 接口用法
 
@@ -25,7 +25,7 @@ curl http://localhost:8000/v1/audio/speech \
 
 ## 隐式行为：流式处理与持久化
 
-与图像生成类似，`aiprox` 在处理 TTS 请求时，会在后台执行关键的增强操作：
+与图像生成类似，`alia_proxy` 在处理 TTS 请求时，会在后台执行关键的增强操作：
 
 1.  **转发请求**: `ProxyService` 将请求转发给上游的 TTS 服务。
 2.  **接收音频流**: 上游服务会返回一个音频数据流（例如 MP3 格式）。

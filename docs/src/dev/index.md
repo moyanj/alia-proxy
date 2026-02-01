@@ -1,6 +1,6 @@
 # 开发指南
 
-本章专为希望对 `aiprox` 进行二次开发或贡献代码的开发者准备。
+本章专为希望对 `alia_proxy` 进行二次开发或贡献代码的开发者准备。
 
 我们致力于维护一个代码整洁、架构清晰且易于扩展的项目。在开始之前，请先熟悉本项目的技术栈和代码规范。
 
@@ -8,7 +8,7 @@
 
 ```
 .
-├── aiprox/               # 后端核心代码 (Python package)
+├── alia_proxy/           # 后端核心代码 (Python package)
 │   ├── providers/        # AI 提供商实现 (OpenAI, Anthropic 等)
 │   ├── routers/          # FastAPI 路由定义
 │   ├── services/         # 核心业务逻辑 (Proxy, Log, Media)

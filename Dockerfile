@@ -46,7 +46,7 @@ COPY --from=backend-builder /usr/local/lib/python3.12/site-packages /usr/local/l
 COPY --from=backend-builder /usr/local/bin /usr/local/bin
 
 # Copy backend application code
-COPY aiprox/ ./aiprox/
+COPY alia_proxy/ ./alia_proxy/
 COPY config.toml ./
 
 # Copy built frontend from frontend builder
@@ -59,4 +59,4 @@ RUN mkdir -p data/media
 EXPOSE 8000
 
 # Run the application
-CMD ["python", "-m", "aiprox.main"]
+CMD ["python", "-m", "alia_proxy.main"]

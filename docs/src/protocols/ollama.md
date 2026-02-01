@@ -1,10 +1,10 @@
 # Ollama
 
-[Ollama](https://ollama.com/) 是目前最流行的本地 LLM 运行框架之一。由于 Ollama 原生提供了 OpenAI 兼容的 API 接口，`aiprox` 可以零成本地接入 Ollama，将其作为本地推理后端。
+[Ollama](https://ollama.com/) 是目前最流行的本地 LLM 运行框架之一。由于 Ollama 原生提供了 OpenAI 兼容的 API 接口，`alia_proxy` 可以零成本地接入 Ollama，将其作为本地推理后端。
 
 ## 原理
 
-`aiprox` 为 Ollama 提供了独立的 `OllamaProvider` 类，但它继承自 `OpenAIProvider`，复用了大部分核心逻辑。`OllamaProvider` 主要做了以下适配：
+`alia_proxy` 为 Ollama 提供了独立的 `OllamaProvider` 类，但它继承自 `OpenAIProvider`，复用了大部分核心逻辑。`OllamaProvider` 主要做了以下适配：
 
 - 默认 `base_url` 指向 `http://localhost:11434/v1`
 - 自动设置默认的 `api_key`（Ollama 不需要真实 Key）
@@ -36,7 +36,7 @@ api_key = "ollama" # Ollama 不需要真实的 Key，填任意非空字符串即
 
 ## 使用方法
 
-现在，您可以通过 `aiprox` 调用 Ollama 中的任何模型。
+现在，您可以通过 `alia_proxy` 调用 Ollama 中的任何模型。
 
 **示例请求**:
 
@@ -54,8 +54,8 @@ curl http://localhost:8000/v1/chat/completions \
 
 ## 优势
 
-将 Ollama 接入 `aiprox` 后，您将获得以下增强体验：
+将 Ollama 接入 `alia_proxy` 后，您将获得以下增强体验：
 
 - **统一日志**: 本地模型的调用记录也会被完整保存到数据库，并可在仪表盘中查看。
-- **API Key 管理**: 虽然 Ollama 本身不鉴权，但通过 `aiprox` 暴露服务后，您可以利用 `aiprox` 未来的鉴权机制来保护本地接口。
+- **API Key 管理**: 虽然 Ollama 本身不鉴权，但通过 `alia_proxy` 暴露服务后，您可以利用 `alia_proxy` 未来的鉴权机制来保护本地接口。
 - **混合部署**: 您可以在同一个应用中混合使用昂贵的云端模型（如 GPT-4）和廉价的本地模型（如 Llama 3），只需切换 `model` 参数即可。

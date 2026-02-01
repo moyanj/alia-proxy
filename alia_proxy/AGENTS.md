@@ -1,11 +1,11 @@
-# AI PROXY BACKEND CORE
+# ALIA PROXY BACKEND CORE
 
 ## OVERVIEW
 FastAPI-based unified AI proxy handler. Manages multi-provider routing, unified logging to SQLite, and media persistence.
 
 ## STRUCTURE
 ```
-aiprox/
+alia_proxy/
 ├── providers/        # Provider strategy implementations
 ├── routers/          # API endpoints (OpenAI-compatible)
 ├── services/         # Core business logic (Logger, Proxy, Media)

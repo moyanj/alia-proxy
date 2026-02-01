@@ -10,7 +10,7 @@
           <Box class="w-6 h-6" />
         </div>
         <div class="flex flex-col">
-          <span class="text-sm font-semibold text-gray-900 dark:text-white leading-tight">AI Proxy Service</span>
+          <span class="text-sm font-semibold text-gray-900 dark:text-white leading-tight">AliaProxy</span>
           <span class="text-[10px] text-gray-500 dark:text-gray-400 font-medium">v0.1.0-alpha</span>
         </div>
       </div>

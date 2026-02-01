@@ -1,8 +1,8 @@
-# AI Proxy Service Configuration Template
+# AliaProxy - AI Proxy Service Configuration Template
 
-app_name = "AI Proxy Service"
+app_name = "AliaProxy"
 debug = false
-database_url = "sqlite://data/aiprox.db"
+database_url = "sqlite://data/alia.db"
 media_dir = "data/media"
 
 [providers.gpt4-example]

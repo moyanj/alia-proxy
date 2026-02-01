@@ -1,7 +1,7 @@
 [project]
-name = "aiprox"
+name = "alia-proxy"
 version = "0.1.0"
-description = "Unified AI API proxy supporting multiple providers, logging, WebUI stats, fallback, and load balancing."
+description = "Alia - Unified AI API proxy supporting multiple providers, logging, WebUI stats, fallback, and load balancing."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["aiprox"]
+packages = ["alia_proxy"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

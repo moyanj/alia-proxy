@@ -1,10 +1,10 @@
 # 动态路由与别名
 
-`aiprox` 最核心的功能之一是其强大的动态路由能力。它允许您通过一个统一的入口，将请求智能地分发到任何后端配置的 AI 提供商，而无需修改客户端代码。
+`alia_proxy` 最核心的功能之一是其强大的动态路由能力。它允许您通过一个统一的入口，将请求智能地分发到任何后端配置的 AI 提供商，而无需修改客户端代码。
 
 ## 基本路由格式
 
-`aiprox` 遵循一个简单而直观的路由格式：
+`alia_proxy` 遵循一个简单而直观的路由格式：
 
 ```
 <provider_instance_name>/<model_identifier>
@@ -51,7 +51,7 @@ api_key = "sk-ant-..."
 
 ## 模型别名 (Alias)
 
-为了进一步提高灵活性并解耦客户端与后端配置，`aiprox` 支持强大的模型别名系统。您可以在 `config.toml` 中定义一个或多个别名，将一个简单的名称映射到一个具体的 `provider/model` 目标。
+为了进一步提高灵活性并解耦客户端与后端配置，`alia_proxy` 支持强大的模型别名系统。您可以在 `config.toml` 中定义一个或多个别名，将一个简单的名称映射到一个具体的 `provider/model` 目标。
 
 ### 定义别名
 
@@ -79,7 +79,7 @@ smartest-model = "anthropic-sonnet/claude-3-5-sonnet-20240620"
 }
 ```
 
-`aiprox` 在处理请求时，会首先检查 `model` 字段是否匹配 `mapping` 中的任何一个键。如果匹配，它会自动将请求路由到 `openai-us-east/gpt-4o`。
+`alia_proxy` 在处理请求时，会首先检查 `model` 字段是否匹配 `mapping` 中的任何一个键。如果匹配，它会自动将请求路由到 `openai-us-east/gpt-4o`。
 
 ### 别名的优势
 

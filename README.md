@@ -1,11 +1,11 @@
-# AI Proxy Service (aiprox)
+# AliaProxy - 统一 AI API 代理服务
 
 <p align="center">
-  <a href="https://github.com/moyanj/aiprox/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"></a>
-  <a href="https://github.com/moyanj/aiprox/actions"><img src="https://img.shields.io/github/actions/workflow/status/moyanj/aiprox/docs.yml?label=docs" alt="Docs CI"></a>
+  <a href="https://github.com/moyanj/alia-proxy/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"></a>
+  <a href="https://github.com/moyanj/alia-proxy/actions"><img src="https://img.shields.io/github/actions/workflow/status/moyanj/alia-proxy/docs.yml?label=docs" alt="Docs CI"></a>
   <img src="https://img.shields.io/badge/python-3.12-blue.svg" alt="Python 3.12">
   <img src="https://img.shields.io/badge/node-20+-green.svg" alt="Node 20+">
-  <a href="https://moyanj.github.io/aiprox/"><img src="https://img.shields.io/badge/docs-online-blue.svg" alt="Documentation"></a>
+  <a href="https://moyanj.github.io/alia-proxy/"><img src="https://img.shields.io/badge/docs-online-blue.svg" alt="Documentation"></a>
 </p>
 
 <p align="center">
@@ -32,7 +32,7 @@
 
 ```
 /
-├── aiprox/               # 后端 FastAPI 应用
+├── alia_proxy/           # 后端 FastAPI 应用
 │   ├── providers/        # 提供商策略实现
 │   ├── routers/          # API 端点
 │   ├── services/         # 核心业务逻辑（日志、媒体）
@@ -77,16 +77,16 @@
 
 | 变量名 | 默认值 | 说明 |
 |--------|--------|------|
-| `AIPROX_DATABASE_URL` | `sqlite:///data/aiprox.db` | 数据库连接字符串，支持 SQLite、PostgreSQL、MySQL |
-| `AIPROX_MEDIA_DIR` | `/home/moyan/projects/aiprox/data/media` | 媒体文件存储目录 |
-| `AIPROX_DEBUG` | `false` | 启用调试模式 |
-| `AIPROX_HOT_RELOAD` | `false` | 启用 config.toml 热重载 |
+| `ALIA_DATABASE_URL` | `sqlite:///data/alia.db` | 数据库连接字符串，支持 SQLite、PostgreSQL、MySQL |
+| `ALIA_MEDIA_DIR` | `/app/data/alia-media` | 媒体文件存储目录 |
+| `ALIA_DEBUG` | `false` | 启用调试模式 |
+| `ALIA_HOT_RELOAD` | `false` | 启用 config.toml 热重载 |
 
 ### 使用 PostgreSQL 替代 SQLite
 
 1. 编辑 `.env`：
    ```bash
-   AIPROX_DATABASE_URL=postgres://user:password@host:5432/aiprox
+   ALIA_DATABASE_URL=postgres://user:password@host:5432/alia
    ```
 
 2. 取消 `docker-compose.yml` 中 `postgres` 服务的注释
@@ -103,7 +103,7 @@ uv pip install -r pyproject.toml
 
 # 运行
 cp config.example.toml config.toml
-uv run python -m aiprox.main
+uv run python -m alia_proxy.main
 ```
 
 ### 前端
@@ -128,7 +128,7 @@ curl http://localhost:8000/v1/chat/completions \
 
 ## 文档
 
-- [在线文档](https://moyanj.github.io/aiprox/)
+- [在线文档](https://moyanj.github.io/alia-proxy/)
 - [English Documentation](./README_EN.md)
 - 完整文档位于 `docs/` 目录
 

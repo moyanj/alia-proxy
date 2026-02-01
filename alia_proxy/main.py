@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
 
     await Tortoise.init(
         db_url=settings.database_url,
-        modules={"models": ["aiprox.models"]},
+        modules={"models": ["alia_proxy.models"]},
     )
     await Tortoise.generate_schemas()
     yield
@@ -55,7 +55,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="AI Proxy Service",
+    title="Alia Proxy",
     description="支持多提供商的统一 AI API 代理服务",
     version="0.1.0",
     lifespan=lifespan,

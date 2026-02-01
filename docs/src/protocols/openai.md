@@ -1,6 +1,6 @@
 # OpenAI 兼容
 
-`OpenAIProvider` 是 `aiprox` 中最基础也是最核心的 Provider 实现。它不仅用于连接 OpenAI 官方的 API，也适用于任何**兼容 OpenAI API V1 规范**的第三方服务或本地模型。
+`OpenAIProvider` 是 `alia_proxy` 中最基础也是最核心的 Provider 实现。它不仅用于连接 OpenAI 官方的 API，也适用于任何**兼容 OpenAI API V1 规范**的第三方服务或本地模型。
 
 ## 功能
 

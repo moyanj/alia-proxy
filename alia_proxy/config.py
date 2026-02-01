@@ -30,17 +30,17 @@ class MappingConfig(BaseModel):
 class Settings(BaseSettings):
     """
     应用全局设置模型。
-    支持从环境变量 (前缀 AIPROX_) 加载。
+    支持从环境变量 (前缀 ALIA_) 加载。
     """
 
     debug: bool = False  # 调试模式
-    database_url: str = "sqlite://data/aiprox.db"  # 数据库连接字符串
+    database_url: str = "sqlite://data/alia.db"  # 数据库连接字符串
     media_dir: str = "data/media"  # 媒体文件存储目录
     providers: Dict[str, ProviderConfig] = {}  # 注册的提供商配置列表
     mapping: Dict[str, Union[str, List[str], MappingConfig]] = {}  # 模型映射表
     hot_reload: bool = False  # 是否启用热重载配置
 
-    model_config = SettingsConfigDict(env_prefix="AIPROX_")
+    model_config = SettingsConfigDict(env_prefix="ALIA_")
 
     def reload(self, config_path: str = "config.toml"):
         """

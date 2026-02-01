@@ -1,6 +1,6 @@
 # 快速开始
 
-本章节将引导您完成 `aiprox` 的安装、配置和首次请求。
+本章节将引导您完成 AliaProxy 的安装、配置和首次请求。
 
 ## 环境要求
 
@@ -38,8 +38,8 @@
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/moyanj/aiprox.git
-cd aiprox
+git clone https://github.com/moyanj/alia-proxy.git
+cd alia-proxy
 ```
 
 ### 2. 配置提供商
@@ -70,10 +70,10 @@ cp .env.example .env
 
 | 变量名 | 默认值 | 说明 |
 |--------|--------|------|
-| `AIPROX_DATABASE_URL` | `sqlite:///data/aiprox.db` | 数据库连接字符串，支持 SQLite、PostgreSQL、MySQL |
-| `AIPROX_MEDIA_DIR` | `/home/moyan/projects/aiprox/data/media` | 媒体文件存储目录 |
-| `AIPROX_DEBUG` | `false` | 是否启用调试模式 |
-| `AIPROX_HOT_RELOAD` | `false` | 是否启用配置热重载 |
+| `ALIA_DATABASE_URL` | `sqlite:///data/alia.db` | 数据库连接字符串，支持 SQLite、PostgreSQL、MySQL |
+| `ALIA_MEDIA_DIR` | `/app/data/alia-media` | 媒体文件存储目录 |
+| `ALIA_DEBUG` | `false` | 是否启用调试模式 |
+| `ALIA_HOT_RELOAD` | `false` | 是否启用配置热重载 |
 
 ### 4. 启动服务
 
@@ -105,7 +105,7 @@ docker-compose up --build
 
 1. 编辑 `.env`：
    ```bash
-   AIPROX_DATABASE_URL=postgres://aiprox:changeme@postgres:5432/aiprox
+   ALIA_DATABASE_URL=postgres://alia:changeme@postgres:5432/alia
    ```
 
 2. 取消 `docker-compose.yml` 中 `postgres` 服务的注释
@@ -141,13 +141,13 @@ docker-compose up --build
 
 3. **设置环境变量**（可选）：
    ```bash
-   export AIPROX_DATABASE_URL="sqlite:///data/aiprox.db"
-   export AIPROX_DEBUG="false"
+   export ALIA_DATABASE_URL="sqlite:///data/alia.db"
+   export ALIA_DEBUG="false"
    ```
 
 4. **启动后端服务**：
    ```bash
-   uv run python -m aiprox.main
+   uv run python -m alia_proxy.main
    ```
    服务将在 http://localhost:8000 启动。
 
@@ -173,14 +173,14 @@ docker-compose up --build
 
 ## 发送您的第一个请求
 
-无论使用何种方式启动，您都可以通过以下 `curl` 命令向 `aiprox` 发送一个聊天请求：
+无论使用何种方式启动，您都可以通过以下 `curl` 命令向 AliaProxy 发送一个聊天请求：
 
 ```bash
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "openai-main/gpt-4o",
-    "messages": [{"role": "user", "content": "你好，aiprox！"}]
+    "messages": [{"role": "user", "content": "你好，Alia！"}]
   }'
 ```
 

@@ -25,7 +25,7 @@ Anthropic 的 Claude 系列模型是强大的竞争者，但其 API 规范（特
 这是最复杂的部分。Anthropic 的流式事件（Server-Sent Events）与 OpenAI 完全不同。
 
 - **Anthropic 事件流**: `message_start`, `content_block_start`, `content_block_delta`, `message_delta`, `message_stop`。
-- **`aiprox` 的工作**: `AnthropicProvider` 会实时监听这些事件，并在内存中进行重组，然后**伪装**成 OpenAI 格式的流式块 `data: {"choices": [{"delta": ...}]}` 发送给客户端。
+- **`alia_proxy` 的工作**: `AnthropicProvider` 会实时监听这些事件，并在内存中进行重组，然后**伪装**成 OpenAI 格式的流式块 `data: {"choices": [{"delta": ...}]}` 发送给客户端。
 
 **这个过程对客户端是完全透明的**。客户端的流式解析逻辑无需任何修改，就能像处理 OpenAI 的流一样处理来自 Claude 的响应。
 
@@ -47,11 +47,11 @@ api_key = "sk-ant-xxxxxxxxxx"
 
 ## 支持原生接口
 
-为了满足高级用户的需求，`aiprox` 也暴露了调用 Anthropic 原生接口的能力。
+为了满足高级用户的需求，`alia_proxy` 也暴露了调用 Anthropic 原生接口的能力。
 
 - **端点**: `POST /anthropic/v1/messages`
-- **行为**: 当请求这个端点时，`aiprox` 会跳过大部分协议转换逻辑，直接将请求体（需符合 Anthropic 原生格式）转发给 Anthropic API。
-- **保留的增强功能**: 即使在原生模式下，`aiprox` 依然会处理：
+- **行为**: 当请求这个端点时，`alia_proxy` 会跳过大部分协议转换逻辑，直接将请求体（需符合 Anthropic 原生格式）转发给 Anthropic API。
+- **保留的增强功能**: 即使在原生模式下，`alia_proxy` 依然会处理：
     - **多模态数据持久化**: 自动保存请求中的 Base64 图片。
     - **统一日志**: 请求和响应依然会被记录到数据库中。
 

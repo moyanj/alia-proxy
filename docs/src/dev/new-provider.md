@@ -4,7 +4,7 @@
 
 ## 1. 继承 BaseProvider
 
-在 `aiprox/providers/` 目录下创建一个新文件（例如 `myprovider.py`）。继承 `BaseProvider` 类并实现必要的抽象方法。
+在 `alia_proxy/providers/` 目录下创建一个新文件（例如 `myprovider.py`）。继承 `BaseProvider` 类并实现必要的抽象方法。
 
 ```python
 from .base import BaseProvider, ChatRequest, ChatResponse, ProviderConfig
@@ -30,7 +30,7 @@ class MyNewProvider(BaseProvider):
 
 ## 2. 注册 Provider
 
-`aiprox` 使用**装饰器模式**动态注册 Provider，无需修改 `factory.py` 的核心逻辑。
+`alia_proxy` 使用**装饰器模式**动态注册 Provider，无需修改 `factory.py` 的核心逻辑。
 
 在你的 Provider 文件末尾添加注册代码：
 

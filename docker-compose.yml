@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  aiprox:
+  alia-proxy:
     build:
       context: .
       dockerfile: Dockerfile
@@ -10,20 +10,20 @@ services:
       - "8000:8000"
     volumes:
       # 数据持久化（SQLite 和媒体文件）
-      - ./data:/home/moyan/projects/aiprox/data
+      - ./data:/app/data
       # 配置文件（可选：如果需要运行时修改配置）
-      - ./config.toml:/home/moyan/projects/aiprox/config.toml
+      - ./config.toml:/app/config.toml
     environment:
       # 自定义数据库连接字符串（默认使用 SQLite）
       # 支持 SQLite、PostgreSQL、MySQL 等
-      # SQLite 示例: sqlite:///data/aiprox.db
-      # PostgreSQL 示例: postgres://user:pass@localhost:5432/aiprox
-      - AIPROX_DATABASE_URL=${AIPROX_DATABASE_URL:-sqlite:///data/aiprox.db}
-      - AIPROX_MEDIA_DIR=${AIPROX_MEDIA_DIR:-/home/moyan/projects/aiprox/data/media}
+      # SQLite 示例: sqlite:///data/alia.db
+      # PostgreSQL 示例: postgres://user:pass@localhost:5432/alia
+      - ALIA_DATABASE_URL=${ALIA_DATABASE_URL:-sqlite:///data/alia.db}
+      - ALIA_MEDIA_DIR=${ALIA_MEDIA_DIR:-/app/data/alia-media}
       # 启用调试模式（可选）
-      - AIPROX_DEBUG=${AIPROX_DEBUG:-false}
+      - ALIA_DEBUG=${ALIA_DEBUG:-false}
       # 启用配置热重载（可选）
-      - AIPROX_HOT_RELOAD=${AIPROX_HOT_RELOAD:-false}
+      - ALIA_HOT_RELOAD=${ALIA_HOT_RELOAD:-false}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 30s
@@ -37,9 +37,9 @@ services:
   # postgres:
   #   image: postgres:16-alpine
   #   environment:
-  #     POSTGRES_USER: aiprox
+  #     POSTGRES_USER: alia
   #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-  #     POSTGRES_DB: aiprox
+  #     POSTGRES_DB: alia
   #   volumes:
   #     - postgres_data:/var/lib/postgresql/data
   #   ports:

@@ -13,29 +13,29 @@
 
 配置来源有两个（优先级从高到低）：
 
-1. **环境变量**（前缀 `AIPROX_`）：适合容器化部署和敏感信息
+1. **环境变量**（前缀 `ALIA_`）：适合容器化部署和敏感信息
 2. **config.toml**：适合复杂的提供商和模型映射配置
 
 ### 环境变量
 
 | 变量名 | 类型 | 说明 |
 |--------|------|------|
-| `AIPROX_DATABASE_URL` | string | 数据库连接字符串，支持 SQLite、PostgreSQL、MySQL |
-| `AIPROX_MEDIA_DIR` | string | 媒体文件存储路径 |
-| `AIPROX_DEBUG` | bool | 调试模式 |
-| `AIPROX_HOT_RELOAD` | bool | 启用 config.toml 热重载 |
+| `ALIA_DATABASE_URL` | string | 数据库连接字符串，支持 SQLite、PostgreSQL、MySQL |
+| `ALIA_MEDIA_DIR` | string | 媒体文件存储路径 |
+| `ALIA_DEBUG` | bool | 调试模式 |
+| `ALIA_HOT_RELOAD` | bool | 启用 config.toml 热重载 |
 
 示例：
 ```bash
-export AIPROX_DATABASE_URL="postgres://user:pass@localhost/aiprox"
-export AIPROX_DEBUG="true"
+export ALIA_DATABASE_URL="postgres://user:pass@localhost/alia"
+export ALIA_DEBUG="true"
 ```
 
 ## 核心模式
 
 ### 1. 依赖注入 (Dependency Injection)
 
-我们在 `aiprox/routers/deps.py` 中定义了核心服务的工厂函数。
+我们在 `alia_proxy/routers/deps.py` 中定义了核心服务的工厂函数。
 
 ```python
 # 获取 ProxyService 实例

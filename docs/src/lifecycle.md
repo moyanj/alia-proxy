@@ -1,6 +1,6 @@
 # 请求生命周期
 
-理解一个请求在 `aiprox` 系统内部的完整流转过程，有助于更好地排查问题和进行二次开发。下面我们以一个包含图片的流式聊天请求为例，追踪其完整的生命周期。
+理解一个请求在 `alia_proxy` 系统内部的完整流转过程，有助于更好地排查问题和进行二次开发。下面我们以一个包含图片的流式聊天请求为例，追踪其完整的生命周期。
 
 **请求示例**:
 
@@ -63,7 +63,7 @@ curl http://localhost:8000/v1/chat/completions \
 
 ### 5. 流式响应处理
 
-- **接收 SSE**: `aiprox` 开始接收来自 Anthropic 的 Server-Sent Events (SSE)。
+- **接收 SSE**: `alia_proxy` 开始接收来自 Anthropic 的 Server-Sent Events (SSE)。
 - **实时协议重写**:
     1.  `AnthropicProvider` 逐行解析事件流（如 `message_start`, `content_block_delta`）。
     2.  **实时地**将这些 Anthropic 特有的事件**重写**为 OpenAI 兼容的流式块格式，即 `data: {"id": ..., "choices": [{"delta": ...}]}`。

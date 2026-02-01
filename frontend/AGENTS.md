@@ -1,7 +1,7 @@
 # FRONTEND KNOWLEDGE BASE
 
 ## OVERVIEW
-Vue 3 dashboard for AI Proxy monitoring, logs, and interactive playground. Built with Vite, Pinia, TailwindCSS, and ECharts.
+Vue 3 dashboard for AliaProxy monitoring, logs, and interactive playground. Built with Vite, Pinia, TailwindCSS, and ECharts.
 
 ## STRUCTURE
 ```

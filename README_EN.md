@@ -1,11 +1,11 @@
-# AI Proxy Service (aiprox)
+# AliaProxy - Unified AI API Proxy
 
 <p align="center">
-  <a href="https://github.com/moyanj/aiprox/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"></a>
-  <a href="https://github.com/moyanj/aiprox/actions"><img src="https://img.shields.io/github/actions/workflow/status/moyanj/aiprox/docs.yml?label=docs" alt="Docs CI"></a>
+  <a href="https://github.com/moyanj/alia-proxy/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"></a>
+  <a href="https://github.com/moyanj/alia-proxy/actions"><img src="https://img.shields.io/github/actions/workflow/status/moyanj/alia-proxy/docs.yml?label=docs" alt="Docs CI"></a>
   <img src="https://img.shields.io/badge/python-3.12-blue.svg" alt="Python 3.12">
   <img src="https://img.shields.io/badge/node-20+-green.svg" alt="Node 20+">
-  <a href="https://moyanj.github.io/aiprox/"><img src="https://img.shields.io/badge/docs-online-blue.svg" alt="Documentation"></a>
+  <a href="https://moyanj.github.io/alia-proxy/"><img src="https://img.shields.io/badge/docs-online-blue.svg" alt="Documentation"></a>
 </p>
 
 <p align="center">
@@ -32,7 +32,7 @@
 
 ```
 /
-├── aiprox/               # Backend FastAPI application
+├── alia_proxy/           # Backend FastAPI application
 │   ├── providers/        # Provider strategy implementations
 │   ├── routers/          # API endpoints
 │   ├── services/         # Core business logic (logging, media)
@@ -77,16 +77,16 @@ The easiest way to get started. Both frontend and backend are built into a singl
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `AIPROX_DATABASE_URL` | `sqlite:///data/aiprox.db` | Database connection string (supports SQLite, PostgreSQL, MySQL) |
-| `AIPROX_MEDIA_DIR` | `/home/moyan/projects/aiprox/data/media` | Media file storage directory |
-| `AIPROX_DEBUG` | `false` | Enable debug mode |
-| `AIPROX_HOT_RELOAD` | `false` | Enable config.toml hot reload |
+| `ALIA_DATABASE_URL` | `sqlite:///data/alia.db` | Database connection string (supports SQLite, PostgreSQL, MySQL) |
+| `ALIA_MEDIA_DIR` | `/app/data/alia-media` | Media file storage directory |
+| `ALIA_DEBUG` | `false` | Enable debug mode |
+| `ALIA_HOT_RELOAD` | `false` | Enable config.toml hot reload |
 
 ### Using PostgreSQL instead of SQLite
 
 1. Edit `.env`:
    ```bash
-   AIPROX_DATABASE_URL=postgres://user:password@host:5432/aiprox
+   ALIA_DATABASE_URL=postgres://user:password@host:5432/alia
    ```
 
 2. Uncomment the PostgreSQL service in `docker-compose.yml`
@@ -103,7 +103,7 @@ uv pip install -r pyproject.toml
 
 # Run
 cp config.example.toml config.toml
-uv run python -m aiprox.main
+uv run python -m alia_proxy.main
 ```
 
 ### Frontend
@@ -128,7 +128,7 @@ curl http://localhost:8000/v1/chat/completions \
 
 ## Documentation
 
-- [Online Documentation](https://moyanj.github.io/aiprox/)
+- [Online Documentation](https://moyanj.github.io/alia-proxy/)
 - [中文文档](./README.md)
 - Full documentation is available in the `docs/` directory.
 
