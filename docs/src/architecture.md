@@ -69,7 +69,11 @@ graph TD
     - `RequestLog`: 存储请求的元数据，为高性能查询设计。
     - `RequestContent`: 独立存储大文本内容（Prompt/Response），避免主表膨胀。
     - `MediaResource`: 记录与请求关联的媒体文件信息。
-- **默认数据库**: 使用 SQLite，方便快速启动。也可以轻松配置为 PostgreSQL 等生产级数据库。
+- **默认数据库**: 使用 SQLite，方便快速启动。
+- **生产数据库**: 通过 `AIPROX_DATABASE_URL` 环境变量可配置为 PostgreSQL、MySQL 等。
+  - SQLite: `sqlite:///data/aiprox.db`
+  - PostgreSQL: `postgres://user:password@host:5432/aiprox`
+  - MySQL: `mysql://user:password@host:3306/aiprox`
 
 ## 前端 (Frontend)
 

@@ -1,6 +1,6 @@
 # 后端开发
 
-后端基于 **FastAPI** 框架构建，使用 Python 3.10+。
+后端基于 **FastAPI** 框架构建，使用 Python 3.12+。
 
 ## 关键技术栈
 
@@ -8,6 +8,28 @@
 - **HTTP 客户端**: httpx (全异步)
 - **ORM**: Tortoise-ORM (异步)
 - **依赖管理**: uv
+
+## 配置与环境变量
+
+配置来源有两个（优先级从高到低）：
+
+1. **环境变量**（前缀 `AIPROX_`）：适合容器化部署和敏感信息
+2. **config.toml**：适合复杂的提供商和模型映射配置
+
+### 环境变量
+
+| 变量名 | 类型 | 说明 |
+|--------|------|------|
+| `AIPROX_DATABASE_URL` | string | 数据库连接字符串，支持 SQLite、PostgreSQL、MySQL |
+| `AIPROX_MEDIA_DIR` | string | 媒体文件存储路径 |
+| `AIPROX_DEBUG` | bool | 调试模式 |
+| `AIPROX_HOT_RELOAD` | bool | 启用 config.toml 热重载 |
+
+示例：
+```bash
+export AIPROX_DATABASE_URL="postgres://user:pass@localhost/aiprox"
+export AIPROX_DEBUG="true"
+```
 
 ## 核心模式
 
