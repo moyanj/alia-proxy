@@ -38,8 +38,21 @@ class Settings(BaseSettings):
     media_dir: str = "data/media"  # 媒体文件存储目录
     providers: Dict[str, ProviderConfig] = {}  # 注册的提供商配置列表
     mapping: Dict[str, Union[str, List[str], MappingConfig]] = {}  # 模型映射表
+    hot_reload: bool = False  # 是否启用热重载配置
 
     model_config = SettingsConfigDict(env_prefix="AIPROX_")
+
+    def reload(self, config_path: str = "config.toml"):
+        """
+        重新从文件加载配置，更新当前实例。
+        """
+        if os.path.exists(config_path):
+            with open(config_path, "r") as f:
+                data = toml.load(f)
+                # 使用 Pydantic 的方式更新数据，确保验证
+                new_settings = Settings(**data)
+                for field in self.model_fields:
+                    setattr(self, field, getattr(new_settings, field))
 
 
 def load_config(config_path: str = "config.toml") -> Settings:

@@ -22,6 +22,14 @@ class ProviderFactory:
     _mapping_indices: Dict[str, int] = {}  # 存储 mapping 轮换的当前索引
 
     @classmethod
+    def clear_cache(cls):
+        """
+        清空实例缓存。用于配置重载时。
+        """
+        cls._instances.clear()
+        cls._mapping_indices.clear()
+
+    @classmethod
     def register(cls, provider_type: str, provider_class: Type[BaseProvider]):
         """
         动态注册新的提供商类型及其实现类。

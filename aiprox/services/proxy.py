@@ -85,8 +85,12 @@ class ProxyService:
 
         for m in messages:
             # 兼容对象和字典
-            role = getattr(m, "role", None) or m.get("role")
-            content = getattr(m, "content", None) or m.get("content")
+            if isinstance(m, dict):
+                role = m.get("role")
+                content = m.get("content")
+            else:
+                role = getattr(m, "role", None)
+                content = getattr(m, "content", None)
 
             if isinstance(content, list):
                 new_content = []

@@ -7,18 +7,50 @@ from tortoise import Tortoise
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
+import asyncio
 from .routers import openai, media, export, common, anthropic
 from .config import settings
+from .providers.factory import ProviderFactory
+
+
+async def config_watcher():
+    """
+    配置文件的热重载监听器。
+    """
+    config_path = "config.toml"
+    if not os.path.exists(config_path):
+        return
+
+    last_mtime = os.path.getmtime(config_path)
+    while True:
+        await asyncio.sleep(5)  # 每 5 秒检查一次
+        if not settings.hot_reload:
+            continue
+
+        try:
+            current_mtime = os.path.getmtime(config_path)
+            if current_mtime > last_mtime:
+                print(f"检测到配置更改，正在重新加载 {config_path}...")
+                settings.reload(config_path)
+                ProviderFactory.clear_cache()
+                last_mtime = current_mtime
+                print("配置重载完成。")
+        except Exception as e:
+            print(f"配置重载失败: {e}")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 启动配置监听任务
+    watcher_task = asyncio.create_task(config_watcher())
+
     await Tortoise.init(
         db_url=settings.database_url,
         modules={"models": ["aiprox.models"]},
     )
     await Tortoise.generate_schemas()
     yield
+    watcher_task.cancel()
     await Tortoise.close_connections()
 
 
