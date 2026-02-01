@@ -58,6 +58,37 @@ strategy = "round-robin" # 或 "random"
     - **无偏好分发**: 当您不关心请求的确切顺序，只想将流量随机打散到多个端点时。
     - **A/B 测试**: 随机地向用户提供由不同模型驱动的体验，以收集性能或质量数据。
 
+## 故障自动降级 (Automatic Fallback)
+
+`aiprox` 支持为映射配置**备选模型列表**（Fallbacks）。当主目标调用失败（如 API 宕机、速率限制或网络超时）时，系统会自动按顺序尝试备选列表中的模型，直到成功或全部失败。
+
+### 配置方式
+
+在 `config.toml` 的映射配置中添加 `fallbacks` 字段：
+
+```toml
+[mapping.gpt-high-availability]
+# 首选目标
+targets = ["openai-main/gpt-4o"]
+# 降级列表：当 targets 失败时，依次尝试以下模型
+fallbacks = [
+    "anthropic-backup/claude-3-opus-20240229",
+    "openai-backup/gpt-3.5-turbo"
+]
+strategy = "round-robin"
+```
+
+### 降级行为
+
+1. 客户端请求 `model: "gpt-high-availability"`。
+2. 系统首先根据 `targets` 和 `strategy` 选择主模型（例如 `openai-main/gpt-4o`）。
+3. 如果主模型调用抛出异常（非 200 OK），系统会捕获该异常并记录日志。
+4. 系统尝试 `fallbacks` 列表中的第一个模型（`anthropic-backup/claude-3-opus-20240229`）。
+5. 如果成功，返回结果；如果再次失败，继续尝试下一个。
+6. 如果所有 fallback 都失败，最终抛出最后一个异常。
+
+> **注意**: 对于流式请求（Stream），降级仅在流建立阶段（即收到第一个数据块之前）有效。一旦流开始传输数据，为保证上下文完整性，后续的连接中断将不会触发重试。
+
 ## 内部实现说明
 
 - **状态管理**: `aiprox` 在内存中为每个配置了 `round-robin` 策略的映射维护一个独立的计数器。这个计数器会随着每次请求递增，并确保了请求分发的顺序性。

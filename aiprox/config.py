@@ -23,6 +23,7 @@ class MappingConfig(BaseModel):
     """
 
     targets: List[str]  # 目标模型列表 (provider/model)
+    fallbacks: List[str] = []  # 降级备选模型列表 (provider/model)
     strategy: str = "round-robin"  # 策略: round-robin (默认), random
 
 

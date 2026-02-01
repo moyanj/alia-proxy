@@ -6,6 +6,7 @@ Unified AI API proxy supporting multiple providers, logging, and WebUI stats.
 
 - **Multi-Provider Support**: OpenAI, Anthropic, Ollama, and other OpenAI-compatible APIs.
 - **Dynamic Routing**: Route requests using the `provider/model` format (e.g., `gpt4-main/gpt-4o`).
+- **High Availability**: Automatic fallback to backup models/providers when the primary fails.
 - **Multimedia Support**: Image Generation (`/v1/images/generations`) and Text-to-Speech (`/v1/audio/speech`).
 - **Local Media Storage**: Media files are saved to `data/media/` and served via authenticated API.
 - **Unified Logging**: All requests and responses (including media paths) are logged to a SQLite database.

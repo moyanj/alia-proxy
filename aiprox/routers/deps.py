@@ -22,12 +22,19 @@ async def get_proxy_service(request: Request) -> ProxyService:
 
     try:
         # 解析提供商实例名和实际模型名
-        instance_name, actual_model = ProviderFactory.resolve_model(model_field)
+        instance_name, actual_model, fallbacks = ProviderFactory.resolve_model(
+            model_field
+        )
         # 获取提供商对象
         provider = ProviderFactory.get_provider(instance_name)
         # 返回封装好的代理服务
         return ProxyService(
-            provider, actual_model, instance_name, request_ip=request_ip
+            provider,
+            actual_model,
+            instance_name,
+            request_ip=request_ip,
+            fallbacks=fallbacks,
+            original_model=model_field,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

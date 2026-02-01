@@ -26,6 +26,9 @@
 
 ### 2. 元数据面板
 - **基础信息**: Request ID, Log ID, 时间戳。
+- **模型信息**:
+    - **Model**: 实际执行该请求的模型名称（例如 `gpt-4o`）。
+    - **Request Model**: 用户原始请求的模型名称（例如 `gpt-high-availability`）。仅当两者不一致时显示，方便追踪别名映射或降级行为。
 - **性能**: 完整的请求延迟（Latency）。
 - **消耗**: 精确的 Prompt Tokens 和 Completion Tokens 统计。
 - **客户端**: 发起请求的 IP 地址。

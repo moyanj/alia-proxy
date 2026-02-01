@@ -17,6 +17,9 @@ class RequestLog(Model):
     provider = fields.CharField(max_length=100, db_index=True)  # 提供商名称
     endpoint = fields.CharField(max_length=100, db_index=True)  # 端点名称
     model = fields.CharField(max_length=100, db_index=True)  # 模型名称
+    request_model = fields.CharField(
+        max_length=100, null=True, db_index=True
+    )  # 用户请求的原始模型名称
     prompt_tokens = fields.IntField(default=0)  # 提示词消耗的 Token 数
     completion_tokens = fields.IntField(default=0)  # 补全词消耗的 Token 数
     total_tokens = fields.IntField(default=0, db_index=True)  # 总消耗 Token 数

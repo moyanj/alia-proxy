@@ -21,6 +21,7 @@ async def log_request(
     is_streaming: bool = False,
     metadata: Optional[dict] = None,
     media_type: str = "image",
+    request_model: Optional[str] = None,
 ):
     """
     异步记录请求日志。
@@ -31,6 +32,7 @@ async def log_request(
         provider=provider,
         endpoint=endpoint,
         model=model,
+        request_model=request_model,
         prompt_tokens=prompt_tokens,
         completion_tokens=completion_tokens,
         total_tokens=total_tokens,

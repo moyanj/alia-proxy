@@ -29,14 +29,15 @@ class ProviderFactory:
         cls._registry[provider_type] = provider_class
 
     @classmethod
-    def resolve_model(cls, model_field: str) -> Tuple[str, str]:
+    def resolve_model(cls, model_field: str) -> Tuple[str, str, List[str]]:
         """
         解析请求中的模型字段。
         支持从 settings.mapping 进行别名映射。
         支持多目标映射及轮换/随机策略。
         期望格式: <提供商配置名>/<模型标识符> (例如: gpt4-main/gpt-4o)
-        :return: (提供商名称, 模型名称)
+        :return: (提供商名称, 模型名称, 降级列表)
         """
+        fallbacks = []
         # 1. 检查是否存在别名映射
         if model_field in settings.mapping:
             config = settings.mapping[model_field]
@@ -45,6 +46,7 @@ class ProviderFactory:
             if isinstance(config, MappingConfig):
                 targets = config.targets
                 strategy = config.strategy
+                fallbacks = config.fallbacks
             # 处理 List[str] 简写
             elif isinstance(config, list):
                 targets = config
@@ -70,7 +72,7 @@ class ProviderFactory:
         # 2. 标准解析格式
         if "/" in model_field:
             parts = model_field.split("/", 1)
-            return parts[0], parts[1]
+            return parts[0], parts[1], fallbacks
 
         raise ValueError(
             f"Invalid model field format: {model_field}. Expected: <provider>/<model> or a mapped alias."
